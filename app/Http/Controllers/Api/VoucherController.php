@@ -23,9 +23,9 @@ class VoucherController extends Controller
 
         $machine = Machine::where('token', $token)->where('is_active', true)->first();
 
-        if (!$machine) {
-            return response()->json(['message' => 'Invalid or inactive machine token'], 403);
-        }
+        // if (!$machine) {
+        //     return response()->json(['message' => 'Invalid or inactive machine token'], 403);
+        // }
 
         $request->validate([
             'code' => 'required|string|size:8',
