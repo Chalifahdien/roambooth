@@ -27,7 +27,7 @@ class PaymentGatewayController extends Controller
             return response()->json(['message' => 'Invalid or inactive machine token'], 403);
         }
 
-        $gateways = PaymentGateway::where('is_active', true)->get();
+        $gateways = PaymentGateway::where('is_active', true)->first();
 
         if ($gateways->isEmpty()) {
             return response()->json(['message' => 'No active payment gateway configured'], 404);
