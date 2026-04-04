@@ -34,7 +34,7 @@ class PaymentGatewayController extends Controller
             'gateways.*.server_key' => 'nullable|string',
             'gateways.*.merchant_id' => 'nullable|string',
             'gateways.*.is_production' => 'boolean',
-            'active_gateway_id' => 'required|exists:payment_gateways,id',
+            'active_gateway_id' => 'nullable|exists:payment_gateways,id',
         ]);
 
         $gateways = $request->input('gateways');

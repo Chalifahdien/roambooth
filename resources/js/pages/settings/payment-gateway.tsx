@@ -73,49 +73,38 @@ export default function PaymentGatewaySettings({ gateways }: Props) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2">
-                                <Globe className="h-4 w-4" />
-                                Active Provider
-                            </CardTitle>
-                            <CardDescription>
-                                Select which payment gateway is currently used for transactions.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <RadioGroup 
-                                value={data.active_gateway_id} 
-                                onValueChange={(val: string) => setData('active_gateway_id', val)}
-                                className="grid grid-cols-2 gap-4"
-                            >
-                                {gateways.map((g) => (
-                                    <Label
-                                        key={g.id}
-                                        htmlFor={`gateway-${g.id}`}
-                                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [...:has([data-state=checked])]:border-primary"
-                                    >
-                                        <RadioGroupItem value={g.id.toString()} id={`gateway-${g.id}`} className="sr-only" />
-                                        <CreditCard className="mb-3 h-6 w-6" />
-                                        <span className="font-semibold">{g.name}</span>
-                                    </Label>
-                                ))}
-                            </RadioGroup>
-                        </CardContent>
-                    </Card>
-
                     {data.gateways.map((gateway, index) => (
-                        <Card key={gateway.id}>
-                            <CardHeader>
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <ShieldCheck className="h-4 w-4" />
-                                    {gateway.name} Configuration
-                                </CardTitle>
-                                <CardDescription>
-                                    Enter your {gateway.name} API credentials.
-                                </CardDescription>
+                        <Card key={gateway.id} className={data.active_gateway_id === gateway.id.toString() ? 'border-primary shadow-sm' : ''}>
+                            <CardHeader className="pb-3 border-b">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-base flex items-center gap-2">
+                                            <ShieldCheck className="h-4 w-4" />
+                                            {gateway.name} Configuration
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Enter your {gateway.name} API credentials.
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Label htmlFor={`active-${gateway.id}`} className="text-sm font-medium">
+                                            {data.active_gateway_id === gateway.id.toString() ? 'Active' : 'Inactive'}
+                                        </Label>
+                                        <Switch
+                                            id={`active-${gateway.id}`}
+                                            checked={data.active_gateway_id === gateway.id.toString()}
+                                            onCheckedChange={(val: boolean) => {
+                                                if (val) {
+                                                    setData('active_gateway_id', gateway.id.toString());
+                                                } else if (data.active_gateway_id === gateway.id.toString()) {
+                                                    setData('active_gateway_id', null as any);
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 pt-6">
                                 <div className="grid gap-2">
                                     <Label htmlFor={`client-key-${gateway.id}`}>Client Key / ID</Label>
                                     <Input
