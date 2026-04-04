@@ -28,7 +28,7 @@ class TemplateController extends Controller
         }
 
         $request->validate([
-            'type' => 'required|in:koran,regular,flipbook',
+            'type' => 'required|in:koran,reguler,flipbook',
         ]);
 
         $templates = Template::with(['frames', 'paperSize'])

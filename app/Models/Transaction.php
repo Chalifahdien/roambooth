@@ -12,6 +12,7 @@ class Transaction extends Model
         'amount',
         'payment_type',
         'template_id',
+        'voucher_id',
         'status',
         'started_at',
         'expires_at',
@@ -42,5 +43,10 @@ class Transaction extends Model
     public function finalImage()
     {
         return $this->hasOne(FinalImage::class);
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class);
     }
 }

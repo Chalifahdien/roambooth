@@ -3,6 +3,7 @@
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\PaperSizeController;
 use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\Settings\PaymentGatewayController;
 use App\Http\Controllers\StickerController;
 use App\Http\Controllers\TransactionController;
@@ -20,6 +21,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('paper-sizes', PaperSizeController::class);
     Route::resource('stickers', StickerController::class);
     Route::resource('transactions', TransactionController::class);
+    Route::resource('vouchers', VoucherController::class);
     Route::get('gallery', [\App\Http\Controllers\GalleryController::class, 'index'])->name('gallery.index');
 
     // Settings
