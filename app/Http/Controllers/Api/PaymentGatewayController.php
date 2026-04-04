@@ -41,6 +41,12 @@ class PaymentGatewayController extends Controller
                 'server_key' => $gateway->server_key,
                 'merchant_id' => $gateway->merchant_id,
                 'is_production' => (bool) $gateway->is_production,
+                'amount_koran' => $machine->amount_koran,
+                'amount_reguler' => $machine->amount_reguler,
+                'amount_flipbook' => $machine->amount_flipbook,
+                'amount_print_koran' => $machine->amount_print_koran,
+                'amount_print_reguler' => $machine->amount_print_reguler,
+                'amount_print_flipbook' => $machine->amount_print_flipbook,
             ]
         ]);
     }
