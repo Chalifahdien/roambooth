@@ -44,6 +44,12 @@ interface Machine {
     is_active: boolean;
     payment_required: boolean;
     token: string | null;
+    amount_koran: number;
+    amount_reguler: number;
+    amount_flipbook: number;
+    amount_print_koran: number;
+    amount_print_reguler: number;
+    amount_print_flipbook: number;
     created_at: string;
     updated_at: string;
 }
@@ -81,6 +87,12 @@ export default function MachineIndex({ machines }: Props) {
         is_active: true,
         payment_required: true,
         token: '',
+        amount_koran: 0,
+        amount_reguler: 0,
+        amount_flipbook: 0,
+        amount_print_koran: 0,
+        amount_print_reguler: 0,
+        amount_print_flipbook: 0,
     });
 
     const openCreateModal = () => {
@@ -96,6 +108,12 @@ export default function MachineIndex({ machines }: Props) {
             is_active: machine.is_active,
             payment_required: machine.payment_required,
             token: machine.token || '',
+            amount_koran: machine.amount_koran || 0,
+            amount_reguler: machine.amount_reguler || 0,
+            amount_flipbook: machine.amount_flipbook || 0,
+            amount_print_koran: machine.amount_print_koran || 0,
+            amount_print_reguler: machine.amount_print_reguler || 0,
+            amount_print_flipbook: machine.amount_print_flipbook || 0,
         });
         clearErrors();
         setIsEditModalOpen(true);
@@ -344,6 +362,72 @@ export default function MachineIndex({ machines }: Props) {
                                     onCheckedChange={(checked) => setData('payment_required', checked)}
                                 />
                             </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium leading-none">Photo Concept Price (IDR)</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_koran">Koran</Label>
+                                        <Input
+                                            id="amount_koran"
+                                            type="number"
+                                            value={data.amount_koran}
+                                            onChange={(e) => setData('amount_koran', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_reguler">Reguler</Label>
+                                        <Input
+                                            id="amount_reguler"
+                                            type="number"
+                                            value={data.amount_reguler}
+                                            onChange={(e) => setData('amount_reguler', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_flipbook">Flipbook</Label>
+                                        <Input
+                                            id="amount_flipbook"
+                                            type="number"
+                                            value={data.amount_flipbook}
+                                            onChange={(e) => setData('amount_flipbook', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium leading-none">Printing Cost (IDR)</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_print_koran">Koran</Label>
+                                        <Input
+                                            id="amount_print_koran"
+                                            type="number"
+                                            value={data.amount_print_koran}
+                                            onChange={(e) => setData('amount_print_koran', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_print_reguler">Reguler</Label>
+                                        <Input
+                                            id="amount_print_reguler"
+                                            type="number"
+                                            value={data.amount_print_reguler}
+                                            onChange={(e) => setData('amount_print_reguler', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="amount_print_flipbook">Flipbook</Label>
+                                        <Input
+                                            id="amount_print_flipbook"
+                                            type="number"
+                                            value={data.amount_print_flipbook}
+                                            onChange={(e) => setData('amount_print_flipbook', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
@@ -419,6 +503,72 @@ export default function MachineIndex({ machines }: Props) {
                                     checked={data.payment_required}
                                     onCheckedChange={(checked) => setData('payment_required', checked)}
                                 />
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium leading-none">Photo Concept Price (IDR)</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_koran">Koran</Label>
+                                        <Input
+                                            id="edit-amount_koran"
+                                            type="number"
+                                            value={data.amount_koran}
+                                            onChange={(e) => setData('amount_koran', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_reguler">Reguler</Label>
+                                        <Input
+                                            id="edit-amount_reguler"
+                                            type="number"
+                                            value={data.amount_reguler}
+                                            onChange={(e) => setData('amount_reguler', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_flipbook">Flipbook</Label>
+                                        <Input
+                                            id="edit-amount_flipbook"
+                                            type="number"
+                                            value={data.amount_flipbook}
+                                            onChange={(e) => setData('amount_flipbook', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h4 className="text-sm font-medium leading-none">Printing Cost (IDR)</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_print_koran">Koran</Label>
+                                        <Input
+                                            id="edit-amount_print_koran"
+                                            type="number"
+                                            value={data.amount_print_koran}
+                                            onChange={(e) => setData('amount_print_koran', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_print_reguler">Reguler</Label>
+                                        <Input
+                                            id="edit-amount_print_reguler"
+                                            type="number"
+                                            value={data.amount_print_reguler}
+                                            onChange={(e) => setData('amount_print_reguler', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-amount_print_flipbook">Flipbook</Label>
+                                        <Input
+                                            id="edit-amount_print_flipbook"
+                                            type="number"
+                                            value={data.amount_print_flipbook}
+                                            onChange={(e) => setData('amount_print_flipbook', parseInt(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <DialogFooter>

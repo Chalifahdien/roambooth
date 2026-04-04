@@ -12,11 +12,23 @@ class Machine extends Model
         'is_active',
         'payment_required',
         'token',
+        'amount_koran',
+        'amount_reguler',
+        'amount_flipbook',
+        'amount_print_koran',
+        'amount_print_reguler',
+        'amount_print_flipbook',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'payment_required' => 'boolean',
+        'amount_koran' => 'integer',
+        'amount_reguler' => 'integer',
+        'amount_flipbook' => 'integer',
+        'amount_print_koran' => 'integer',
+        'amount_print_reguler' => 'integer',
+        'amount_print_flipbook' => 'integer',
     ];
 
     protected static function boot()

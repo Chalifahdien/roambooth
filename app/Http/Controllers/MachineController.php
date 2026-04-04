@@ -30,6 +30,12 @@ class MachineController extends Controller
             'is_active' => 'required|boolean',
             'payment_required' => 'required|boolean',
             'token' => 'nullable|string|max:255',
+            'amount_koran' => 'nullable|integer|min:0',
+            'amount_reguler' => 'nullable|integer|min:0',
+            'amount_flipbook' => 'nullable|integer|min:0',
+            'amount_print_koran' => 'nullable|integer|min:0',
+            'amount_print_reguler' => 'nullable|integer|min:0',
+            'amount_print_flipbook' => 'nullable|integer|min:0',
         ]);
 
         Machine::create($validated);
@@ -47,6 +53,12 @@ class MachineController extends Controller
             'is_active' => 'required|boolean',
             'payment_required' => 'required|boolean',
             'token' => 'nullable|string|max:255',
+            'amount_koran' => 'nullable|integer|min:0',
+            'amount_reguler' => 'nullable|integer|min:0',
+            'amount_flipbook' => 'nullable|integer|min:0',
+            'amount_print_koran' => 'nullable|integer|min:0',
+            'amount_print_reguler' => 'nullable|integer|min:0',
+            'amount_print_flipbook' => 'nullable|integer|min:0',
         ]);
 
         $machine->update($validated);
