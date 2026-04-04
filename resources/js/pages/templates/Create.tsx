@@ -15,11 +15,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import templatesRoute from '@/routes/templates';
 import AppLayout from '@/layouts/app-layout';
 
-interface Props {
-    existingCategories: string[];
+interface PaperSize {
+    id: number;
+    name: string;
+    width_mm: number;
+    height_mm: number;
 }
 
-export default function TemplateCreate({ existingCategories }: Props) {
+interface Props {
+    existingCategories: string[];
+    paperSizes: PaperSize[];
+}
+
+export default function TemplateCreate({ existingCategories, paperSizes }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -28,6 +36,7 @@ export default function TemplateCreate({ existingCategories }: Props) {
         type: 'reguler',
         category: '',
         orientation: 'portrait',
+        paper_size_id: '',
         template_path: null as File | null,
     });
 
@@ -128,6 +137,27 @@ export default function TemplateCreate({ existingCategories }: Props) {
                                     </div>
 
                                     <div className="grid gap-2">
+                                        <Label htmlFor="paper_size_id">Paper Size</Label>
+                                        <Select
+
+                                            value={data.paper_size_id}
+                                            onValueChange={(value) => setData('paper_size_id', value)}
+                                        >
+                                            <SelectTrigger id="paper_size_id" className="w-full">
+                                                <SelectValue placeholder="Select paper size" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {paperSizes.map((size) => (
+                                                    <SelectItem key={size.id} value={size.id.toString()}>
+                                                        {size.name} ({size.width_mm}x{size.height_mm}mm)
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.paper_size_id && <p className="text-sm text-destructive">{errors.paper_size_id}</p>}
+                                    </div>
+
+                                    <div className="grid gap-2">
                                         <Label htmlFor="category">Category</Label>
                                         <Input
                                             id="category"
@@ -151,7 +181,7 @@ export default function TemplateCreate({ existingCategories }: Props) {
                                                 value={data.type}
                                                 onValueChange={(value) => setData('type', value)}
                                             >
-                                                <SelectTrigger id="type">
+                                                <SelectTrigger id="type" className="w-full">
                                                     <SelectValue placeholder="Select type" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -168,7 +198,7 @@ export default function TemplateCreate({ existingCategories }: Props) {
                                                 value={data.orientation}
                                                 onValueChange={(value) => setData('orientation', value as any)}
                                             >
-                                                <SelectTrigger id="orientation">
+                                                <SelectTrigger id="orientation" className="w-full">
                                                     <SelectValue placeholder="Select orientation" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -193,13 +223,6 @@ export default function TemplateCreate({ existingCategories }: Props) {
                                         <p className="text-[0.7rem] text-muted-foreground">PNG/JPG recommended. Proportions will be automatically calculated.</p>
                                         {errors.template_path && <p className="text-sm text-destructive">{errors.template_path}</p>}
                                     </div>
-                                    {/* 
-                                    <div className="pt-2">
-                                        <div className="flex items-center gap-2 p-3 rounded-lg border bg-sidebar/30 text-xs text-muted-foreground">
-                                            <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                                            Status: Inactive (Set active after frame configuration)
-                                        </div>
-                                    </div> */}
                                 </CardContent>
                                 <CardFooter>
                                     <Button className="w-full" disabled={processing}>

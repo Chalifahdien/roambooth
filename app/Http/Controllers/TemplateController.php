@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PaperSize;
 use App\Models\Template;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use Spatie\LaravelImageOptimizer\Facades\ImageOptimizer;
 
 class TemplateController extends Controller
 {
@@ -16,8 +20,29 @@ class TemplateController extends Controller
      */
     public function index(Request $request): Response
     {
+        $query = Template::latest();
+
+        // Search name or category
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('category', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Filter type
+        if ($request->filled('type') && $request->type !== 'all') {
+            $query->where('type', $request->type);
+        }
+
+        // Filter orientation
+        if ($request->filled('orientation') && $request->orientation !== 'all') {
+            $query->where('orientation', $request->orientation);
+        }
+
         return Inertia::render('templates/index', [
-            'templates' => Template::latest()->get(),
+            'templates' => $query->paginate(10)->withQueryString(),
+            'filters' => $request->only(['search', 'type', 'orientation']),
         ]);
     }
 
@@ -32,7 +57,8 @@ class TemplateController extends Controller
             ->toArray();
 
         return Inertia::render('templates/Create', [
-            'existingCategories' => $existingCategories
+            'existingCategories' => $existingCategories,
+            'paperSizes' => PaperSize::where('is_active', true)->get(),
         ]);
     }
 
@@ -46,21 +72,57 @@ class TemplateController extends Controller
             'type' => 'required|in:reguler,koran,flipbook',
             'category' => 'nullable|string|max:255',
             'orientation' => 'required|in:portrait,landscape',
+            'paper_size_id' => 'required|exists:paper_sizes,id',
             'template_path' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240', // Max 10MB
         ]);
 
         if ($request->hasFile('template_path')) {
+            // Tingkatkan memory limit secara dinamis karena template photobooth bisa memiliki resolusi sangat tinggi (memakan memori saat GD extract pixel map)
+            ini_set('memory_limit', '512M');
+
             $file = $request->file('template_path');
-            $path = $file->store('templates', 'public');
-            
-            // Get image dimensions
-            [$width, $height] = getimagesize(storage_path('app/public/' . $path));
+            $filename = $file->hashName();
+            $path = 'templates/' . $filename;
+            $absolutePath = storage_path('app/public/' . $path);
+
+            if (!file_exists(dirname($absolutePath))) {
+                mkdir(dirname($absolutePath), 0755, true);
+            }
+
+            // Init ImageManager dengan GD driver
+            $manager = new ImageManager(new Driver());
+            $image = $manager->decodePath($file->getRealPath());
+
+            // Dapatkan dimensi sebelum disimpan
+            $width = $image->width();
+            $height = $image->height();
+
+            // Lakukan konversi orientasi/resolusi awal
+            $extension = strtolower($file->getClientOriginalExtension());
+            if (in_array($extension, ['jpg', 'jpeg', 'webp'])) {
+                // Biarkan pada kualitas 100% untuk dikompresi losslessly secara ekstrem oleh Spatie Optimizer
+                $image->encodeUsingFileExtension($extension, 100)->save($absolutePath);
+            } elseif ($extension === 'png') {
+                $image->encodeUsingFileExtension('png')->save($absolutePath);
+            } else {
+                // Fallback untuk format lain
+                $file->storeAs('templates', $filename, 'public');
+            }
+
+            // Extreme Optimisation Pass (Visually Lossless tanpa memecah piksel)
+            // Menggunakan pngquant, optipng, dan jpegoptim
+            try {
+                ImageOptimizer::optimize($absolutePath);
+            } catch (\Exception $e) {
+                // Ignore
+            }
             
             $template = Template::create([
                 'name' => $validated['name'],
                 'type' => $validated['type'],
                 'category' => $validated['category'],
                 'orientation' => $validated['orientation'],
+                'paper_size_id' => $validated['paper_size_id'],
                 'template_path' => $path,
                 'image_width' => $width,
                 'image_height' => $height,
@@ -86,9 +148,12 @@ class TemplateController extends Controller
             ->pluck('category')
             ->toArray();
 
+        $paperSizes = PaperSize::orderBy('name')->get();
+
         return Inertia::render('templates/edit', [
-            'template' => $template,
-            'existingCategories' => $existingCategories
+            'template' => $template->load('frames'),
+            'existingCategories' => $existingCategories,
+            'paperSizes' => $paperSizes,
         ]);
     }
 
@@ -101,6 +166,9 @@ class TemplateController extends Controller
             'frames' => 'required|json',
             'name' => 'required|string|max:100',
             'category' => 'nullable|string|max:100',
+            'paper_size_id' => 'required|exists:paper_sizes,id',
+            'type' => 'required|in:reguler,koran,flipbook',
+            'orientation' => 'required|in:portrait,landscape',
         ]);
 
         $frames = json_decode($request->frames, true);
@@ -125,7 +193,10 @@ class TemplateController extends Controller
             'frame_count' => count($frames),
             'name' => $request->name,
             'category' => $request->category,
-            'is_active' => true, // Activate template when frames are set
+            'paper_size_id' => $request->paper_size_id,
+            'type' => $request->type,
+            'orientation' => $request->orientation,
+            'is_active' => true,
         ]);
 
         return redirect()
@@ -138,6 +209,11 @@ class TemplateController extends Controller
      */
     public function toggle(Template $template): RedirectResponse
     {
+        // Prevent activation if no frames
+        if (!$template->is_active && $template->frame_count === 0) {
+            return back()->withErrors(['status' => 'Template harus memiliki minimal 1 frame untuk diaktifkan.']);
+        }
+
         $template->update([
             'is_active' => !$template->is_active
         ]);

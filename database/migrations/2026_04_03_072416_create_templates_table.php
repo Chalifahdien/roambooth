@@ -12,6 +12,7 @@ return new class extends Migration {
     {
         Schema::create('templates', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('paper_size_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->enum('type', ['reguler', 'koran', 'flipbook']);
             $table->string('category')->nullable();

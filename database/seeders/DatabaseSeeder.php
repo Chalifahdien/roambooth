@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\PaymentGateway;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +14,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        PaymentGateway::updateOrCreate(['name' => 'Midtrans'], ['is_active' => false]);
+        PaymentGateway::updateOrCreate(['name' => 'Doku'], ['is_active' => false]);
     }
 }

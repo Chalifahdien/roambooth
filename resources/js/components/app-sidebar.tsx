@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Monitor, LayoutTemplate } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Monitor, Image as ImageIcon, FileText, Smile, ReceiptText, CreditCard } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import machines from '@/routes/machines';
+import paperSizes from '@/routes/paper-sizes';
 import templates from '@/routes/templates';
+import stickers from '@/routes/stickers';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -25,14 +27,34 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Transactions',
+        href: '/transactions',
+        icon: ReceiptText,
+    },
+    {
+        title: 'Gallery',
+        href: '/gallery',
+        icon: ImageIcon,
+    },
+    {
+        title: 'Templates',
+        href: templates.index(),
+        icon: BookOpen,
+    },
+    {
         title: 'Machines',
         href: machines.index(),
         icon: Monitor,
     },
     {
-        title: 'Templates',
-        href: templates.index(),
-        icon: LayoutTemplate,
+        title: 'Stickers',
+        href: stickers.index(),
+        icon: Smile,
+    },
+    {
+        title: 'Paper Sizes',
+        href: paperSizes.index(),
+        icon: FileText,
     },
 ];
 

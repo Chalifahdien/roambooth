@@ -12,6 +12,7 @@ class Template extends Model
     use HasFactory;
 
     protected $fillable = [
+        'paper_size_id',
         'name',
         'type',
         'category',
@@ -24,6 +25,7 @@ class Template extends Model
     ];
 
     protected $casts = [
+        'paper_size_id' => 'integer',
         'is_active' => 'boolean',
         'image_width' => 'integer',
         'image_height' => 'integer',
@@ -36,5 +38,13 @@ class Template extends Model
     public function frames(): HasMany
     {
         return $this->hasMany(TemplateFrame::class);
+    }
+
+    /**
+     * Get the paper size for the template.
+     */
+    public function paperSize()
+    {
+        return $this->belongsTo(PaperSize::class);
     }
 }
