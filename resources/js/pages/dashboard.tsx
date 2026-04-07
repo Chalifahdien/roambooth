@@ -1,26 +1,242 @@
-import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Head, Link, usePage } from '@inertiajs/react';
+import type { ComponentType } from 'react';
+import {
+    BellRing,
+    Camera,
+    CheckCircle2,
+    CreditCard,
+    DollarSign,
+    Gauge,
+    Sparkles,
+    Ticket,
+    TrendingUp,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { dashboard } from '@/routes';
+import machinesRoute from '@/routes/machines';
+import templatesRoute from '@/routes/templates';
+import vouchersRoute from '@/routes/vouchers';
+
+type IconKey = 'credit-card' | 'dollar-sign' | 'camera' | 'ticket';
+
+type DashboardStat = {
+    title: string;
+    value: string;
+    change: string;
+    icon: IconKey;
+};
+
+type DashboardActivity = {
+    id: number;
+    title: string;
+    time: string;
+};
+
+type DashboardTarget = {
+    label: string;
+    value: number;
+};
+
+type DashboardChartPoint = {
+    day: string;
+    total: number;
+};
+
+type DashboardPageProps = {
+    auth?: { user?: { name?: string } };
+    stats: DashboardStat[];
+    recentActivities: DashboardActivity[];
+    performanceTargets: DashboardTarget[];
+    transactionChartData: DashboardChartPoint[];
+};
+
+const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
+    'credit-card': CreditCard,
+    'dollar-sign': DollarSign,
+    camera: Camera,
+    ticket: Ticket,
+};
 
 export default function Dashboard() {
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData } =
+        usePage<DashboardPageProps>().props;
+    const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
+    const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
+
     return (
         <>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
+                <Card className="py-4">
+                    <CardHeader className="flex flex-row items-center justify-between gap-3">
+                        <div>
+                            <CardTitle className="text-xl">
+                                Halo, {firstName}! 👋
+                            </CardTitle>
+                            <CardDescription>
+                                Ringkasan performa bisnis Roambooth hari ini.
+                            </CardDescription>
+                        </div>
+                        <Badge variant="secondary" className="gap-1">
+                            <TrendingUp className="h-3.5 w-3.5" />
+                            Trending Positif
+                        </Badge>
+                    </CardHeader>
+                </Card>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {stats.map((item) => {
+                        const Icon = iconMap[item.icon] ?? CreditCard;
+
+                        return (
+                            <Card key={item.title} className="py-5">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                    <CardDescription>{item.title}</CardDescription>
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{item.value}</div>
+                                    <p className="text-muted-foreground mt-1 text-xs">{item.change}</p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
-                <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <BellRing className="h-4 w-4" />
+                                Aktivitas Terbaru
+                            </CardTitle>
+                            <CardDescription>Update penting 1-2 jam terakhir.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {recentActivities.length > 0 ? (
+                                recentActivities.map((activity) => (
+                                    <div key={activity.id} className="flex items-center justify-between rounded-lg border p-3">
+                                        <div className="flex items-start gap-2">
+                                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
+                                            <p className="text-sm">{activity.title}</p>
+                                        </div>
+                                        <span className="text-muted-foreground text-xs">{activity.time}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-muted-foreground rounded-lg border border-dashed p-3 text-sm">
+                                    Belum ada aktivitas terbaru.
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Gauge className="h-4 w-4" />
+                                Target Harian
+                            </CardTitle>
+                            <CardDescription>Progress terhadap target operasional.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {performanceTargets.map((target) => (
+                                <div key={target.label} className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span>{target.label}</span>
+                                        <span className="font-medium">{target.value}%</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-muted">
+                                        <div
+                                            className="h-2 rounded-full bg-primary"
+                                            style={{ width: `${target.value}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                        <CardFooter>
+                            <Button size="sm" className="w-full">
+                                Lihat Laporan Lengkap
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <TrendingUp className="h-4 w-4" />
+                            Grafik Transaksi Mingguan
+                        </CardTitle>
+                        <CardDescription>
+                            Tren jumlah transaksi selama 7 hari terakhir.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-7 items-end gap-3">
+                            {transactionChartData.length > 0 ? (
+                                transactionChartData.map((point) => {
+                                    const barHeight = Math.max(10, Math.round((point.total / maxTransaction) * 140));
+
+                                    return (
+                                        <div key={point.day} className="flex flex-col items-center gap-2">
+                                            <span className="text-xs font-medium">{point.total}</span>
+                                            <div
+                                                className="w-full max-w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
+                                                style={{ height: `${barHeight}px` }}
+                                                title={`${point.day}: ${point.total} transaksi`}
+                                            />
+                                            <span className="text-muted-foreground text-xs">{point.day}</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-muted-foreground col-span-7 rounded-lg border border-dashed p-3 text-sm">
+                                    Belum ada data transaksi untuk ditampilkan.
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Sparkles className="h-4 w-4" />
+                            Aksi Cepat
+                        </CardTitle>
+                        <CardDescription>
+                            Shortcut untuk aktivitas yang sering dilakukan.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 md:grid-cols-3">
+                        <Button variant="outline" asChild>
+                            <Link href={vouchersRoute.index().url}>
+                                Buat Voucher Baru
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={templatesRoute.create().url}>
+                                Tambah Template
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={machinesRoute.index().url}>
+                                Cek Status Mesin
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         </>
     );
@@ -30,7 +246,7 @@ Dashboard.layout = {
     breadcrumbs: [
         {
             title: 'Dashboard',
-            href: dashboard(),
+            href: dashboard().url,
         },
     ],
 };
