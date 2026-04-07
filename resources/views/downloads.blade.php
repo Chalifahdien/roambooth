@@ -117,7 +117,8 @@
             margin-bottom: 1.5rem;
         }
 
-        .media-preview img, .media-preview video {
+        .media-preview img,
+        .media-preview video {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
@@ -228,6 +229,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -240,7 +242,8 @@
     <div class="container">
         <header>
             <div class="logo">ROAMBOOTH</div>
-            <p class="subtitle">Your memories from {{ $finalImage->transaction->machine->name ?? 'our booth' }} are ready!</p>
+            <p class="subtitle">Your memories from {{ $finalImage->transaction->machine->name ?? 'our booth' }} are
+                ready!</p>
         </header>
 
         <div class="hero-section">
@@ -256,41 +259,44 @@
                         <p style="color: var(--text-muted)">Image Not Available</p>
                     @endif
                 </div>
-                <a href="{{ $finalImage->image_url }}" download="Roambooth_Photo_{{ $finalImage->token }}.jpg" class="download-btn">
+                <a href="{{ $finalImage->image_url }}" download="Roambooth_Photo_{{ $finalImage->token }}.jpg"
+                    class="download-btn">
                     <i data-lucide="download"></i> Download Photo
                 </a>
             </div>
 
             <!-- Live Photo Card -->
             @if ($finalImage->video_path)
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title"><i data-lucide="video"></i> Live Photo</h2>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i data-lucide="video"></i> Live Photo</h2>
+                    </div>
+                    <div class="media-preview">
+                        <video src="{{ $finalImage->video_url }}" controls preload="metadata"></video>
+                    </div>
+                    <a href="{{ $finalImage->video_url }}" download="Roambooth_LivePhoto_{{ $finalImage->token }}.mp4"
+                        class="download-btn">
+                        <i data-lucide="download"></i> Download Video
+                    </a>
                 </div>
-                <div class="media-preview">
-                    <video src="{{ $finalImage->video_url }}" controls preload="metadata"></video>
-                </div>
-                <a href="{{ $finalImage->video_url }}" download="Roambooth_LivePhoto_{{ $finalImage->token }}.mp4" class="download-btn">
-                    <i data-lucide="download"></i> Download Video
-                </a>
-            </div>
             @endif
         </div>
 
         @if ($finalImage->transaction->photos->count() > 0)
-        <h2 class="section-title"><i data-lucide="camera"></i> Session Gallery</h2>
-        <div class="gallery-grid">
-            @foreach ($finalImage->transaction->photos as $index => $photo)
-            <div class="gallery-item">
-                <img src="{{ $photo->photo_url }}" alt="Session Photo {{ $index + 1 }}">
-                <div class="overlay">
-                    <a href="{{ $photo->photo_url }}" download="Photo_{{ $index + 1 }}.jpg" class="mini-download-btn">
-                        <i data-lucide="download" size="20"></i>
-                    </a>
-                </div>
+            <h2 class="section-title"><i data-lucide="camera"></i> Session Gallery</h2>
+            <div class="gallery-grid">
+                @foreach ($finalImage->transaction->photos as $index => $photo)
+                    <div class="gallery-item">
+                        <img src="{{ $photo->photo_url }}" alt="Session Photo {{ $index + 1 }}">
+                        <div class="overlay">
+                            <a href="{{ $photo->photo_url }}" download="Photo_{{ $index + 1 }}.jpg"
+                                class="mini-download-btn">
+                                <i data-lucide="download" size="20"></i>
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
             </div>
-            @endforeach
-        </div>
         @endif
 
         <footer>

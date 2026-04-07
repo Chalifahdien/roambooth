@@ -51,12 +51,21 @@ type DashboardChartPoint = {
     total: number;
 };
 
+type RevenueSummary = {
+    today: string;
+    yesterday: string;
+    thisWeek: string;
+    thisMonth: string;
+    total: string;
+};
+
 type DashboardPageProps = {
     auth?: { user?: { name?: string } };
     stats: DashboardStat[];
     recentActivities: DashboardActivity[];
     performanceTargets: DashboardTarget[];
     transactionChartData: DashboardChartPoint[];
+    revenueSummary: RevenueSummary;
 };
 
 const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
@@ -67,7 +76,7 @@ const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
 };
 
 export default function Dashboard() {
-    const { auth, stats, recentActivities, performanceTargets, transactionChartData } =
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary } =
         usePage<DashboardPageProps>().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
     const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
@@ -110,6 +119,42 @@ export default function Dashboard() {
                             </Card>
                         );
                     })}
+                </div>
+
+                <div className="grid gap-4">
+                    <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                Rincian Total Pendapatan
+                            </CardTitle>
+                            <CardDescription>Akumulasi pendapatan dari seluruh transaksi berstatus berhasil (SUCCESS).</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Hari Ini</p>
+                                    <p className="text-xl font-bold">{revenueSummary.today}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Kemarin</p>
+                                    <p className="text-xl font-bold">{revenueSummary.yesterday}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Minggu Ini</p>
+                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisWeek}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Bulan Ini</p>
+                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisMonth}</p>
+                                </div>
+                                <div className="space-y-1 border-t md:border-l md:border-t-0 md:pl-4 pt-2 md:pt-0 col-span-2 md:col-span-1 border-border">
+                                    <p className="text-sm font-medium text-muted-foreground">Total Keseluruhan</p>
+                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{revenueSummary.total}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-3">

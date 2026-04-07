@@ -28,7 +28,7 @@ class DashboardController extends Controller
             "dashboard:metrics:{$todayStart->toDateString()}",
             now()->addSeconds($cacheTtlSeconds),
             function () use ($todayStart, $todayEnd, $yesterdayStart, $yesterdayEnd, $now) {
-                $successStatus = 'SUCCESS';
+                $successStatus = 'COMPLETED';
 
                 $todayTransactions = Transaction::whereBetween('created_at', [$todayStart, $todayEnd])->count();
                 $yesterdayTransactions = Transaction::whereBetween('created_at', [$yesterdayStart, $yesterdayEnd])->count();
@@ -91,11 +91,34 @@ class DashboardController extends Controller
                     ->values()
                     ->all();
 
+                $thisWeekStart = $now->copy()->startOfWeek();
+                $thisMonthStart = $now->copy()->startOfMonth();
+
+                $thisWeekRevenue = (int) Transaction::where('created_at', '>=', $thisWeekStart)
+                    ->where('status', $successStatus)
+                    ->sum('amount');
+
+                $thisMonthRevenue = (int) Transaction::where('created_at', '>=', $thisMonthStart)
+                    ->where('status', $successStatus)
+                    ->sum('amount');
+
+                $totalRevenue = (int) Transaction::where('status', $successStatus)
+                    ->sum('amount');
+
+                $revenueSummary = [
+                    'today' => 'Rp ' . number_format($todayRevenue, 0, ',', '.'),
+                    'yesterday' => 'Rp ' . number_format($yesterdayRevenue, 0, ',', '.'),
+                    'thisWeek' => 'Rp ' . number_format($thisWeekRevenue, 0, ',', '.'),
+                    'thisMonth' => 'Rp ' . number_format($thisMonthRevenue, 0, ',', '.'),
+                    'total' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+                ];
+
                 return [
                     'stats' => $stats,
                     'recentActivities' => $recentActivities,
                     'performanceTargets' => $this->buildPerformanceTargets($todayStart, $todayEnd),
                     'transactionChartData' => $this->buildWeeklyTransactionChart($now),
+                    'revenueSummary' => $revenueSummary,
                 ];
             }
         );
@@ -105,6 +128,7 @@ class DashboardController extends Controller
             'recentActivities' => $payload['recentActivities'],
             'performanceTargets' => $payload['performanceTargets'],
             'transactionChartData' => $payload['transactionChartData'],
+            'revenueSummary' => $payload['revenueSummary'],
         ]);
     }
 
