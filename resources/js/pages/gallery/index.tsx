@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Search, Eye, Download, ExternalLink, Calendar, Monitor, ReceiptText } from 'lucide-react';
+import { Search, Eye, Download, ExternalLink, Calendar, Monitor, ReceiptText, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import galleryRoute from '@/routes/gallery';
+import transactionsRoute from '@/routes/transactions';
 
 const formatDate = (date: string | null) => {
     if (!date) return '-';
@@ -90,6 +91,16 @@ export default function GalleryIndex({ gallery, filters }: Props) {
         document.body.appendChild(link);
     };
 
+    const handleDeleteMedia = (id: number) => {
+        if (confirm('Are you sure you want to delete all physical media (photos & video) for this transaction? This action cannot be undone.')) {
+            router.delete(`/gallery/${id}/media`, {
+                onSuccess: () => {
+                    setSelectedImage(null);
+                },
+            });
+        }
+    };
+
     return (
         <>
             <Head title="Gallery" />
@@ -147,16 +158,17 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                     <img
                                         src={item.image_url}
                                         alt={item.transaction.transaction_id}
-                                        className="max-h-full max-w-full object-contain transition-transform group-hover:scale-110"
+                                        className="max-h-full max-w-full object-contain transition-transform group-hover:scale-110 cursor-pointer"
+                                        onClick={() => setSelectedImage(item)}
                                     />
 
                                     {/* Hover Actions */}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                        <Button
+                                         <Button
                                             variant="secondary"
                                             size="icon"
                                             className="h-8 w-8 shadow-md"
-                                            onClick={() => setSelectedImage(item)}
+                                            onClick={() => router.get(transactionsRoute.show({ transaction: item.transaction_id }).url)}
                                         >
                                             <Eye className="h-4 w-4" />
                                         </Button>
@@ -247,7 +259,14 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                         >
                                             <Download className="mr-2 h-4 w-4" /> Download Result
                                         </Button>
-                                        {selectedImage.video_url && (
+                                         <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => router.get(transactionsRoute.show({ transaction: selectedImage.transaction_id }).url)}
+                                        >
+                                            <ExternalLink className="mr-2 h-4 w-4" /> View Transaction Details
+                                        </Button>
+                                         {selectedImage.video_url && (
                                             <Button
                                                 variant="outline"
                                                 className="w-full"
@@ -256,6 +275,15 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                                 <ExternalLink className="mr-2 h-4 w-4" /> View Video
                                             </Button>
                                         )}
+                                        <div className="pt-2">
+                                            <Button
+                                                variant="destructive"
+                                                className="w-full"
+                                                onClick={() => handleDeleteMedia(selectedImage.id)}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete All Media
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

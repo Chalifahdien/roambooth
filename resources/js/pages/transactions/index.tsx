@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Search, ReceiptText, Calendar, Wallet, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Search, ReceiptText, Calendar, Wallet, CheckCircle2, XCircle, Clock, AlertCircle, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
@@ -183,12 +183,13 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                 <TableHead className="text-center">Status</TableHead>
                                 <TableHead>Started At</TableHead>
                                 <TableHead>Finished At</TableHead>
+                                <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {transactions.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={8} className="h-24 text-center">
                                         {(filters.search || filters.status)
                                             ? 'No transactions match your filters.'
                                             : 'No transactions found.'}
@@ -196,10 +197,10 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                 </TableRow>
                             ) : (
                                 transactions.data.map((transaction) => {
-                                    const config = statusConfig[transaction.status] || { 
-                                        label: transaction.status, 
-                                        color: 'bg-gray-500/10 text-gray-500', 
-                                        icon: AlertCircle 
+                                    const config = statusConfig[transaction.status] || {
+                                        label: transaction.status,
+                                        color: 'bg-gray-500/10 text-gray-500',
+                                        icon: AlertCircle
                                     };
                                     const Icon = config.icon;
 
@@ -208,7 +209,7 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <ReceiptText className="h-4 w-4 text-muted-foreground" />
-                                                    <span className="truncate max-w-[100px]" title={transaction.transaction_id}>
+                                                    <span className="truncate" title={transaction.transaction_id}>
                                                         {transaction.transaction_id}
                                                     </span>
                                                 </div>
@@ -235,6 +236,16 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                                     <CheckCircle2 className="h-3.5 w-3.5" />
                                                     {formatDate(transaction.finished_at)}
                                                 </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() => router.get(transactionsRoute.show({ id: transaction.id }).url)}
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     );

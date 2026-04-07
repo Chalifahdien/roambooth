@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FinalImage;
 use App\Models\Machine;
 use App\Models\Transaction;
+use App\Models\Voucher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -32,8 +33,9 @@ class FinalImageController extends Controller
 
         $validator = Validator::make($request->all(), [
             'transaction_id' => 'required|exists:transactions,id',
+            'template_id' => 'required|exists:templates,id',
             'image' => 'required|image|max:10240', // Max 10MB
-            'video' => 'nullable|mimes:mp4,mov,avi|max:51200', // Max 50MB
+            'video' => 'nullable|mimes:mp4,mov,avi,webm|max:51200',
             'photos' => 'nullable|array',
             'photos.*.frame_id' => 'required_with:photos|exists:template_frames,id',
             'photos.*.image' => 'required_with:photos|image|max:10240',
@@ -55,10 +57,12 @@ class FinalImageController extends Controller
             return response()->json(['message' => 'Transaction not found or unauthorized'], 404);
         }
 
+        $baseFolder = 'transaction_photo/' . $transaction->id;
+
         // 1. Process Final Image/Video
-        $imagePath = $request->file('image')->store('final_images', 'public');
+        $imagePath = $request->file('image')->store($baseFolder . '/final_images', 'public');
         $videoPath = $request->hasFile('video')
-            ? $request->file('video')->store('final_videos', 'public')
+            ? $request->file('video')->store($baseFolder . '/final_videos', 'public')
             : null;
 
         $finalImage = FinalImage::create([
@@ -72,7 +76,7 @@ class FinalImageController extends Controller
         if ($request->has('photos') && is_array($request->photos)) {
             foreach ($request->file('photos') as $index => $photoData) {
                 if (isset($photoData['image'])) {
-                    $photoPath = $photoData['image']->store('transaction_photos', 'public');
+                    $photoPath = $photoData['image']->store($baseFolder . '/photos', 'public');
 
                     \App\Models\TransactionPhoto::create([
                         'transaction_id' => $transaction->id,
@@ -82,6 +86,19 @@ class FinalImageController extends Controller
                     ]);
                 }
             }
+        }
+
+        // 3. Update Transaction status and finished_at
+        $transaction->update([
+            'status' => 'COMPLETED',
+            'template_id' => $request->template_id,
+            'finished_at' => now(),
+        ]);
+
+        if ($transaction->voucher_id) {
+            Voucher::where('id', $transaction->voucher_id)->update([
+                'status' => 'used',
+            ]);
         }
 
         return response()->json([

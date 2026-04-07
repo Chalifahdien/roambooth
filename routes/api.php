@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/payment-gateway', [PaymentGatewayController::class, 'index']);
 Route::get('/templates', [TemplateController::class, 'index']);
 Route::get('/stickers', [StickerController::class, 'index']);
+Route::post('/vouchers', [VoucherController::class, 'index']);
 Route::post('/transactions', [TransactionController::class, 'store']);
 Route::post('/final-images', [FinalImageController::class, 'store']);
 Route::post('/final-images/{id}/print', [FinalImageController::class, 'print']);
-Route::post('/vouchers', [VoucherController::class, 'index']);

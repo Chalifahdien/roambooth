@@ -31,11 +31,9 @@ class TransactionController extends Controller
         $validator = Validator::make($request->all(), [
             'transaction_id' => 'required|string|unique:transactions,transaction_id',
             'amount' => 'required|integer',
-            'template_id' => 'nullable|exists:templates,id',
             'voucher_id' => 'nullable|integer|exists:vouchers,id',
             'payment_type' => 'nullable|string',
             'status' => 'nullable|string',
-            'started_at' => 'required|date_format:Y-m-d H:i:s',
         ]);
 
         if ($validator->fails()) {
@@ -50,10 +48,9 @@ class TransactionController extends Controller
             'machine_id' => $machine->id,
             'amount' => $request->amount,
             'payment_type' => $request->payment_type,
-            'template_id' => $request->template_id,
             'voucher_id' => $request->voucher_id,
             'status' => $request->status ?? 'WAITING_PAYMENT',
-            'started_at' => $request->started_at,
+            'started_at' => now(),
             'expires_at' => now()->addMinutes(30), // Default expiry 30 mins
         ]);
 

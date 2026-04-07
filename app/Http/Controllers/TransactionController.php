@@ -36,4 +36,16 @@ class TransactionController extends Controller
             'filters' => $request->only(['search', 'status']),
         ]);
     }
+
+    /**
+     * Display the specified transaction detail.
+     */
+    public function show(Transaction $transaction): Response
+    {
+        $transaction->load(['machine', 'template', 'photos.frame', 'finalImage', 'voucher']);
+
+        return Inertia::render('transactions/show', [
+            'transaction' => $transaction,
+        ]);
+    }
 }

@@ -60,7 +60,7 @@ class VoucherController extends Controller
             'valid' => true,
             'message' => 'Voucher is ready to use',
             'data' => [
-                'code' => $voucher->code,
+                'voucher_id' => $voucher->id,
                 'type' => $voucher->type, // koran, reguler, flipbook
                 'status' => $voucher->status
             ]
