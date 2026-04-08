@@ -527,7 +527,7 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
                             <div className="mb-4">
                                 <Ticket className="h-12 w-12 mb-2 mx-auto text-black" />
                                 <h1 className="text-xl font-black uppercase tracking-widest border-b-2 border-black pb-1 mb-2">
-                                    Roambooth Voucher
+                                    Potopi Voucher
                                 </h1>
                             </div>
 
