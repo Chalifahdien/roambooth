@@ -72,9 +72,8 @@ interface Props {
 }
 
 const statusConfig: Record<string, { label: string, color: string, icon: any }> = {
-    'WAITING_PAYMENT': { label: 'Waiting Payment', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200', icon: Clock },
-    'SUCCESS': { label: 'Success', color: 'bg-green-500/10 text-green-600 border-green-200', icon: CheckCircle2 },
-    'FAILED': { label: 'Failed', color: 'bg-red-500/10 text-red-600 border-red-200', icon: XCircle },
+    'PAID': { label: 'Paid', color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200', icon: Clock },
+    'COMPLETED': { label: 'Completed', color: 'bg-green-500/10 text-green-600 border-green-200', icon: CheckCircle2 },
     'EXPIRED': { label: 'Expired', color: 'bg-gray-500/10 text-gray-600 border-gray-200', icon: Clock },
 };
 
