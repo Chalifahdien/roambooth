@@ -45,6 +45,7 @@ class VoucherController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|in:koran,reguler,flipbook',
+            'limit' => 'required|integer|min:1',
         ]);
 
         Voucher::create($validated);
@@ -60,6 +61,7 @@ class VoucherController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:koran,reguler,flipbook',
             'status' => 'required|in:ready,used',
+            'limit' => 'required|integer|min:1',
             'code' => 'nullable|string|max:8',
         ]);
 

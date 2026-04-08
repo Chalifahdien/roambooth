@@ -96,9 +96,15 @@ class FinalImageController extends Controller
         ]);
 
         if ($transaction->voucher_id) {
-            Voucher::where('id', $transaction->voucher_id)->update([
-                'status' => 'used',
-            ]);
+            /** @var \App\Models\Voucher|null $usedVoucher */
+            $usedVoucher = Voucher::find($transaction->voucher_id);
+            if ($usedVoucher) {
+                $usedVoucher->used_count += 1;
+                if ($usedVoucher->used_count >= $usedVoucher->limit) {
+                    $usedVoucher->status = 'used';
+                }
+                $usedVoucher->save();
+            }
         }
 
         return response()->json([

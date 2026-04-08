@@ -41,10 +41,10 @@ class VoucherController extends Controller
             ], 404);
         }
 
-        if ($voucher->status === 'used') {
+        if ($voucher->status === 'used' || $voucher->used_count >= $voucher->limit) {
             return response()->json([
                 'valid' => false,
-                'message' => 'Voucher has already been used',
+                'message' => 'Voucher has reached its usage limit',
                 'used_at' => $voucher->updated_at
             ], 422);
         }

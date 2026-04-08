@@ -43,6 +43,8 @@ interface Voucher {
     code: string;
     type: 'koran' | 'reguler' | 'flipbook';
     status: 'ready' | 'used';
+    limit: number;
+    used_count: number;
     created_at: string;
     updated_at: string;
 }
@@ -107,6 +109,7 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
         code: '',
         type: 'reguler' as 'koran' | 'reguler' | 'flipbook',
         status: 'ready' as 'ready' | 'used',
+        limit: 1,
     });
 
     const openCreateModal = () => {
@@ -121,6 +124,7 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
             code: voucher.code,
             type: voucher.type,
             status: voucher.status,
+            limit: voucher.limit,
         });
         clearErrors();
         setIsEditModalOpen(true);
@@ -258,6 +262,7 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
                                 <TableHead>Code</TableHead>
                                 <TableHead>Template Type</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Usage Limit</TableHead>
                                 <TableHead>Created At</TableHead>
                                 <TableHead>Updated At</TableHead>
                                 <TableHead className="text-right"></TableHead>
@@ -299,6 +304,13 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
                                             <Badge variant={voucher.status === 'ready' ? 'default' : 'secondary'}>
                                                 {voucher.status === 'ready' ? 'Ready' : 'Used'}
                                             </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-1.5 text-sm">
+                                                <span className="font-medium text-foreground">{voucher.used_count}</span>
+                                                <span className="text-muted-foreground">/</span>
+                                                <span className="font-medium text-muted-foreground">{voucher.limit}</span>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                                             {new Date(voucher.created_at).toLocaleDateString('id-ID', {
@@ -378,6 +390,17 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
                                 </Select>
                                 {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
                             </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="limit">Usage Limit</Label>
+                                <Input
+                                    id="limit"
+                                    type="number"
+                                    min="1"
+                                    value={data.limit}
+                                    onChange={(e) => setData('limit', parseInt(e.target.value) || 1)}
+                                />
+                                {errors.limit && <p className="text-sm text-destructive">{errors.limit}</p>}
+                            </div>
                         </div>
 
                         <DialogFooter>
@@ -443,6 +466,17 @@ export default function VoucherIndex({ vouchers, filters }: Props) {
                                         </SelectContent>
                                     </Select>
                                     {errors.status && <p className="text-sm text-destructive">{errors.status}</p>}
+                                </div>
+                                <div className="grid gap-2 col-span-2">
+                                    <Label htmlFor="edit-limit">Usage Limit</Label>
+                                    <Input
+                                        id="edit-limit"
+                                        type="number"
+                                        min="1"
+                                        value={data.limit}
+                                        onChange={(e) => setData('limit', parseInt(e.target.value) || 1)}
+                                    />
+                                    {errors.limit && <p className="text-sm text-destructive">{errors.limit}</p>}
                                 </div>
                             </div>
                         </div>

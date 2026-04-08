@@ -11,6 +11,8 @@ class Voucher extends Model
         'code',
         'type',
         'status',
+        'limit',
+        'used_count',
     ];
 
     /**
