@@ -17,6 +17,7 @@ class GalleryController extends Controller
     {
         $query = FinalImage::with(['transaction.machine', 'transaction.template'])
             ->whereNotNull('image_path')
+            ->where('image_path', '!=', 'EXPIRED')
             ->latest();
 
         // Search by Transaction ID (the string one from machine)
