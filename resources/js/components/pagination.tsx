@@ -17,9 +17,37 @@ interface Props {
 export function Pagination({ links, className }: Props) {
     if (links.length <= 3) return null;
 
+    const prevLink = links.find(l => l.label.includes('Previous'));
+    const nextLink = links.find(l => l.label.includes('Next'));
+
+    // Filter out previous, next, and possible ellipses '...'
+    const pageLinks = links.filter(l => 
+        !l.label.includes('Previous') && 
+        !l.label.includes('Next') && 
+        !l.label.includes('...')
+    );
+
+    const activeIndex = pageLinks.findIndex(l => l.active);
+    
+    let start = activeIndex - 2;
+    if (start < 0) start = 0;
+    
+    let end = start + 5;
+    if (end > pageLinks.length) {
+        end = pageLinks.length;
+        start = Math.max(0, end - 5);
+    }
+
+    const visiblePages = pageLinks.slice(start, end);
+
+    const visibleLinks = [];
+    if (prevLink) visibleLinks.push(prevLink);
+    visibleLinks.push(...visiblePages);
+    if (nextLink) visibleLinks.push(nextLink);
+
     return (
         <div className={cn("flex flex-wrap items-center justify-center gap-1 py-1 px-4", className)}>
-            {links.map((link, key) => {
+            {visibleLinks.map((link, key) => {
                 const isPrev = link.label.includes('Previous');
                 const isNext = link.label.includes('Next');
                 
