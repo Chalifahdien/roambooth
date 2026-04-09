@@ -55,14 +55,14 @@ class GalleryController extends Controller
                     Storage::disk('public')->delete($photo->photo_path);
                 }
                 // Update photo record
-                $photo->update(['photo_path' => null]);
+                $photo->update(['photo_path' => "EXPIRED"]);
             }
         }
 
         // 3. Update Final Image record
         $finalImage->update([
-            'image_path' => null,
-            'video_path' => null,
+            'image_path' => "EXPIRED",
+            'video_path' => "EXPIRED",
         ]);
 
         return redirect()->back()->with('success', 'Media files deleted successfully.');
