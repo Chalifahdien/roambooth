@@ -201,7 +201,7 @@ export default function TransactionShow({ transaction }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center">
-                            {transaction.final_image?.image_url ? (
+                            {transaction.final_image?.image_url && !transaction.final_image.image_url.includes('EXPIRED') ? (
                                 <>
                                     <div className="relative group max-w-xs mx-auto mb-6 bg-sidebar rounded-lg p-2 border">
                                         <img
@@ -223,8 +223,7 @@ export default function TransactionShow({ transaction }: Props) {
                                     <FileImage className="h-12 w-12 mx-auto mb-2 opacity-20" />
                                     No final image available
                                 </div>
-                            )}
-                        </CardContent>
+                            )}</CardContent>
                     </Card>
 
                     {/* Live Photo */}
@@ -236,7 +235,7 @@ export default function TransactionShow({ transaction }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center">
-                            {transaction.final_image?.video_url ? (
+                            {transaction.final_image?.video_url && !transaction.final_image.video_url.includes('EXPIRED') ? (
                                 <>
                                     <div className="relative group max-w-xs mx-auto mb-6 bg-sidebar rounded-lg p-2 border">
                                         <video
@@ -273,9 +272,9 @@ export default function TransactionShow({ transaction }: Props) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {transaction.photos.length > 0 ? (
+                        {transaction.photos.filter(photo => !photo.photo_url.includes('EXPIRED')).length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                {transaction.photos.map((photo, index) => (
+                                {transaction.photos.filter(photo => !photo.photo_url.includes('EXPIRED')).map((photo, index) => (
                                     <div key={photo.id} className="relative group overflow-hidden rounded-lg border bg-sidebar p-1">
                                         <img
                                             src={photo.photo_url}
