@@ -1,5 +1,4 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import type { ComponentType } from 'react';
 import {
     BellRing,
     Camera,
@@ -11,6 +10,7 @@ import {
     Ticket,
     TrendingUp,
 } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -92,7 +92,7 @@ export default function Dashboard() {
                                 Halo, {firstName}! 👋
                             </CardTitle>
                             <CardDescription>
-                                Ringkasan performa bisnis Roambooth hari ini.
+                                Ringkasan performa bisnis Potopi Photobooth hari ini.
                             </CardDescription>
                         </div>
                         <Badge variant="secondary" className="gap-1">

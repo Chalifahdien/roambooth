@@ -33,7 +33,10 @@ export default function Profile({
                 />
 
                 <Form
-                    {...ProfileController.update.form()}
+                    action={ProfileController.update.url({
+                        query: { _method: 'PATCH' },
+                    })}
+                    method="post"
                     options={{
                         preserveScroll: true,
                     }}

@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Download Your Memories | {{ config('app.name', 'Roambooth') }}</title>
+    <title>Download Your Memories | {{ config('app.name', 'Potopi') }}</title>
+    <link rel="icon" href="{{ asset('images/logo.png') }}" type="image/png" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -47,14 +49,14 @@
             animation: fadeInDown 0.8s ease-out;
         }
 
-        .logo {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #fbbf24, #f59e0b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            display: inline-block;
+        .brand-logo {
+            display: block;
+            margin: 0 auto 0.75rem;
+            max-width: min(100%, 260px);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
         }
 
         .subtitle {
@@ -241,7 +243,8 @@
 <body>
     <div class="container">
         <header>
-            <div class="logo">ROAMBOOTH</div>
+            <img src="{{ asset('images/logo.png') }}" alt="Potopi Photobooth" class="brand-logo" decoding="async"
+                fetchpriority="high">
             <p class="subtitle">Your memories from {{ $finalImage->transaction->machine->name ?? 'our booth' }} are
                 ready!</p>
         </header>
@@ -300,7 +303,7 @@
         @endif
 
         <footer>
-            <p>&copy; {{ date('Y') }} Roambooth. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Potopi. All rights reserved.</p>
         </footer>
     </div>
 

@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import { BookOpen, FolderGit2, LayoutGrid, Monitor, Image as ImageIcon, FileText, Smile, ReceiptText, CreditCard, Ticket } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -82,9 +81,21 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            tooltip={{ children: 'Potopi Photobooth' }}
+                        >
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                className="flex min-h-0 w-full min-w-0 items-center justify-center gap-2 px-1"
+                            >
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Potopi Photobooth"
+                                    className="mx-auto h-auto max-h-11 w-full max-w-[min(100%,14rem)] object-contain object-center group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:max-h-7 group-data-[collapsible=icon]:max-w-none"
+                                />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

@@ -64,7 +64,10 @@ export default function Security({
                 />
 
                 <Form
-                    {...SecurityController.update.form()}
+                    action={SecurityController.update.url({
+                        query: { _method: 'PUT' },
+                    })}
+                    method="post"
                     options={{
                         preserveScroll: true,
                     }}
@@ -178,7 +181,12 @@ export default function Security({
                             </p>
 
                             <div className="relative inline">
-                                <Form {...disable.form()}>
+                                <Form
+                                    action={disable.url({
+                                        query: { _method: 'DELETE' },
+                                    })}
+                                    method="post"
+                                >
                                     {({ processing }) => (
                                         <Button
                                             variant="destructive"
@@ -216,7 +224,8 @@ export default function Security({
                                     </Button>
                                 ) : (
                                     <Form
-                                        {...enable.form()}
+                                        action={enable.url()}
+                                        method="post"
                                         onSuccess={() =>
                                             setShowSetupModal(true)
                                         }
