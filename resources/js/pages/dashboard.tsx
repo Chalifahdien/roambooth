@@ -59,6 +59,13 @@ type RevenueSummary = {
     thisWeek: string;
     thisMonth: string;
     total: string;
+    periodLabel: string;
+    previousPeriodLabel: string;
+};
+
+type ReportFilters = {
+    startDate: string;
+    endDate: string;
 };
 
 type DashboardPageProps = {
@@ -68,11 +75,7 @@ type DashboardPageProps = {
     performanceTargets: DashboardTarget[];
     transactionChartData: DashboardChartPoint[];
     revenueSummary: RevenueSummary;
-    reportRange: {
-        startDate: string;
-        endDate: string;
-        label: string;
-    };
+    reportFilters: ReportFilters;
 };
 
 const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
@@ -83,12 +86,12 @@ const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
 };
 
 export default function Dashboard() {
-    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, reportRange } =
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, reportFilters } =
         usePage<DashboardPageProps>().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
     const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
-    const [startDate, setStartDate] = useState(reportRange.startDate);
-    const [endDate, setEndDate] = useState(reportRange.endDate);
+    const [startDate, setStartDate] = useState(reportFilters.startDate);
+    const [endDate, setEndDate] = useState(reportFilters.endDate);
 
     const applyDateFilter = () => {
         router.get(
@@ -99,16 +102,24 @@ export default function Dashboard() {
                 },
             }).url,
             {},
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
+            { preserveState: true, replace: true }
         );
     };
 
     const resetDateFilter = () => {
-        router.get(dashboard().url, {}, { preserveState: true, preserveScroll: true, replace: true });
+        const today = new Date().toISOString().slice(0, 10);
+        setStartDate(today);
+        setEndDate(today);
+        router.get(
+            dashboard({
+                query: {
+                    start_date: today,
+                    end_date: today,
+                },
+            }).url,
+            {},
+            { preserveState: true, replace: true }
+        );
     };
 
     return (
@@ -122,7 +133,7 @@ export default function Dashboard() {
                                 Halo, {firstName}! 👋
                             </CardTitle>
                             <CardDescription>
-                                Ringkasan performa bisnis Potopi Photobooth untuk periode {reportRange.label}.
+                                Ringkasan performa bisnis Potopi Photobooth hari ini.
                             </CardDescription>
                         </div>
                         <Badge variant="secondary" className="gap-1">
@@ -133,26 +144,36 @@ export default function Dashboard() {
                 </Card>
 
                 <Card className="py-4">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Filter Laporan Tanggal</CardTitle>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Filter Report Tanggal</CardTitle>
                         <CardDescription>
-                            Lihat report dari tanggal berapa hingga tanggal berapa.
+                            Pilih rentang tanggal untuk melihat ringkasan report.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
-                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
-                            <span className="text-sm font-medium">Dari Tanggal</span>
-                            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+                        <div className="grid gap-1.5">
+                            <label htmlFor="start-date" className="text-sm text-muted-foreground">Dari tanggal</label>
+                            <Input
+                                id="start-date"
+                                type="date"
+                                value={startDate}
+                                onChange={(event) => setStartDate(event.target.value)}
+                                className="w-full md:w-[190px]"
+                            />
                         </div>
-                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
-                            <span className="text-sm font-medium">Sampai Tanggal</span>
-                            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+                        <div className="grid gap-1.5">
+                            <label htmlFor="end-date" className="text-sm text-muted-foreground">Sampai tanggal</label>
+                            <Input
+                                id="end-date"
+                                type="date"
+                                value={endDate}
+                                onChange={(event) => setEndDate(event.target.value)}
+                                className="w-full md:w-[190px]"
+                            />
                         </div>
                         <div className="flex gap-2">
-                            <Button onClick={applyDateFilter}>Terapkan</Button>
-                            <Button variant="outline" onClick={resetDateFilter}>
-                                Reset
-                            </Button>
+                            <Button onClick={applyDateFilter}>Tampilkan Report</Button>
+                            <Button variant="outline" onClick={resetDateFilter}>Reset</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -183,24 +204,27 @@ export default function Dashboard() {
                                 <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 Rincian Total Pendapatan
                             </CardTitle>
-                            <CardDescription>Akumulasi pendapatan dari seluruh transaksi berstatus berhasil (SUCCESS).</CardDescription>
+                            <CardDescription>
+                                Periode aktif: {revenueSummary.periodLabel}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Periode Dipilih</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Pendapatan Periode</p>
                                     <p className="text-xl font-bold">{revenueSummary.today}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Periode Sebelumnya</p>
                                     <p className="text-xl font-bold">{revenueSummary.yesterday}</p>
+                                    <p className="text-xs text-muted-foreground">{revenueSummary.previousPeriodLabel}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Minggu Ini</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Jumlah Transaksi</p>
                                     <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisWeek}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Bulan Ini</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
                                     <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisMonth}</p>
                                 </div>
                                 <div className="space-y-1 border-t md:border-l md:border-t-0 md:pl-4 pt-2 md:pt-0 col-span-2 md:col-span-1 border-border">
@@ -276,23 +300,23 @@ export default function Dashboard() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
                             <TrendingUp className="h-4 w-4" />
-                            Grafik Transaksi Mingguan
+                            Grafik Transaksi Periode
                         </CardTitle>
                         <CardDescription>
-                            Tren jumlah transaksi selama 7 hari terakhir.
+                            Tren jumlah transaksi berdasarkan rentang tanggal terpilih.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex items-end gap-3 overflow-x-auto pb-2">
+                        <div className="grid auto-cols-fr grid-flow-col items-end gap-3 overflow-x-auto">
                             {transactionChartData.length > 0 ? (
                                 transactionChartData.map((point) => {
                                     const barHeight = Math.max(10, Math.round((point.total / maxTransaction) * 140));
 
                                     return (
-                                        <div key={point.day} className="flex min-w-10 flex-col items-center gap-2">
+                                        <div key={point.day} className="flex flex-col items-center gap-2">
                                             <span className="text-xs font-medium">{point.total}</span>
                                             <div
-                                                className="w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
+                                                className="w-full max-w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
                                                 style={{ height: `${barHeight}px` }}
                                                 title={`${point.day}: ${point.total} transaksi`}
                                             />
@@ -301,7 +325,7 @@ export default function Dashboard() {
                                     );
                                 })
                             ) : (
-                                <div className="text-muted-foreground w-full rounded-lg border border-dashed p-3 text-sm">
+                                <div className="text-muted-foreground col-span-7 rounded-lg border border-dashed p-3 text-sm">
                                     Belum ada data transaksi untuk ditampilkan.
                                 </div>
                             )}

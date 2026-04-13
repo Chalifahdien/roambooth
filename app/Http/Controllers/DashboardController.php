@@ -6,9 +6,9 @@ use App\Models\Machine;
 use App\Models\Transaction;
 use App\Models\Voucher;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,47 +20,42 @@ class DashboardController extends Controller
         $cacheTtlSeconds = (int) config('dashboard.cache_ttl_seconds', 120);
 
         $now = Carbon::now($timezone);
-        $validated = $request->validate([
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date'],
-        ]);
+        $startDateInput = $request->query('start_date');
+        $endDateInput = $request->query('end_date');
 
-        $startDate = $validated['start_date'] ?? null;
-        $endDate = $validated['end_date'] ?? null;
+        $rangeStart = $startDateInput
+            ? Carbon::parse($startDateInput, $timezone)->startOfDay()
+            : $now->copy()->startOfDay();
+        $rangeEnd = $endDateInput
+            ? Carbon::parse($endDateInput, $timezone)->endOfDay()
+            : $now->copy()->endOfDay();
 
-        if ($startDate === null && $endDate === null) {
-            $reportStart = $now->copy()->startOfDay();
-            $reportEnd = $now->copy()->endOfDay();
-        } else {
-            $reportStart = Carbon::parse($startDate ?? $endDate, $timezone)->startOfDay();
-            $reportEnd = Carbon::parse($endDate ?? $startDate, $timezone)->endOfDay();
+        if ($rangeEnd->lt($rangeStart)) {
+            [$rangeStart, $rangeEnd] = [$rangeEnd->copy()->startOfDay(), $rangeStart->copy()->endOfDay()];
         }
 
-        if ($reportEnd->lt($reportStart)) {
-            [$reportStart, $reportEnd] = [$reportEnd->copy()->startOfDay(), $reportStart->copy()->endOfDay()];
-        }
+        $rangeDays = max(1, $rangeStart->diffInDays($rangeEnd) + 1);
+        $previousRangeStart = $rangeStart->copy()->subDays($rangeDays);
+        $previousRangeEnd = $rangeStart->copy()->subSecond();
 
         $payload = Cache::remember(
-            "dashboard:metrics:{$reportStart->toDateString()}:{$reportEnd->toDateString()}",
+            "dashboard:metrics:{$rangeStart->toDateString()}:{$rangeEnd->toDateString()}",
             now()->addSeconds($cacheTtlSeconds),
-            function () use ($reportStart, $reportEnd) {
+            function () use ($rangeStart, $rangeEnd, $previousRangeStart, $previousRangeEnd) {
                 $successStatus = 'COMPLETED';
-                $periodDays = $reportStart->diffInDays($reportEnd) + 1;
-                $previousPeriodEnd = $reportStart->copy()->subDay()->endOfDay();
-                $previousPeriodStart = $previousPeriodEnd->copy()->subDays($periodDays - 1)->startOfDay();
 
-                $rangeTransactions = Transaction::whereBetween('created_at', [$reportStart, $reportEnd])->count();
-                $previousTransactions = Transaction::whereBetween('created_at', [$previousPeriodStart, $previousPeriodEnd])->count();
+                $periodTransactions = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])->count();
+                $previousPeriodTransactions = Transaction::whereBetween('created_at', [$previousRangeStart, $previousRangeEnd])->count();
 
-                $rangeRevenue = (int) Transaction::whereBetween('created_at', [$reportStart, $reportEnd])
+                $periodRevenue = (int) Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
                     ->where('status', $successStatus)
                     ->sum('amount');
-                $previousRevenue = (int) Transaction::whereBetween('created_at', [$previousPeriodStart, $previousPeriodEnd])
+                $previousPeriodRevenue = (int) Transaction::whereBetween('created_at', [$previousRangeStart, $previousRangeEnd])
                     ->where('status', $successStatus)
                     ->sum('amount');
 
-                $rangeSessions = Transaction::whereBetween('started_at', [$reportStart, $reportEnd])->count();
-                $rangeVoucherUsage = Transaction::whereBetween('created_at', [$reportStart, $reportEnd])
+                $periodSessions = Transaction::whereBetween('started_at', [$rangeStart, $rangeEnd])->count();
+                $periodVoucherUsage = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
                     ->whereNotNull('voucher_id')
                     ->count();
                 $activeVoucherCount = Voucher::where('status', 'ready')->count();
@@ -68,32 +63,32 @@ class DashboardController extends Controller
                 $stats = [
                     [
                         'title' => 'Transaksi Periode',
-                        'value' => (string) $rangeTransactions,
-                        'change' => $this->formatChange($rangeTransactions, $previousTransactions, 'dari periode sebelumnya'),
+                        'value' => (string) $periodTransactions,
+                        'change' => $this->formatChange($periodTransactions, $previousPeriodTransactions, 'vs periode sebelumnya'),
                         'icon' => 'credit-card',
                     ],
                     [
                         'title' => 'Pendapatan Periode',
-                        'value' => 'Rp ' . number_format($rangeRevenue, 0, ',', '.'),
-                        'change' => $this->formatChange($rangeRevenue, $previousRevenue, 'dari periode sebelumnya'),
+                        'value' => 'Rp ' . number_format($periodRevenue, 0, ',', '.'),
+                        'change' => $this->formatChange($periodRevenue, $previousPeriodRevenue, 'vs periode sebelumnya'),
                         'icon' => 'dollar-sign',
                     ],
                     [
                         'title' => 'Sesi Photo Booth',
-                        'value' => (string) $rangeSessions,
-                        'change' => 'Berdasarkan started_at pada periode dipilih',
+                        'value' => (string) $periodSessions,
+                        'change' => 'Berdasarkan started_at di periode terpilih',
                         'icon' => 'camera',
                     ],
                     [
                         'title' => 'Voucher Dipakai',
-                        'value' => (string) $rangeVoucherUsage,
+                        'value' => (string) $periodVoucherUsage,
                         'change' => $activeVoucherCount . ' voucher ready',
                         'icon' => 'ticket',
                     ],
                 ];
 
                 $recentActivities = Transaction::with(['machine:id,name', 'template:id,name'])
-                    ->whereBetween('created_at', [$reportStart, $reportEnd])
+                    ->whereBetween('created_at', [$rangeStart, $rangeEnd])
                     ->latest()
                     ->limit(4)
                     ->get()
@@ -111,36 +106,41 @@ class DashboardController extends Controller
                     ->values()
                     ->all();
 
-                $periodAnchor = $reportEnd->copy();
-                $thisWeekStart = $periodAnchor->copy()->startOfWeek();
-                $thisMonthStart = $periodAnchor->copy()->startOfMonth();
-
-                $thisWeekRevenue = (int) Transaction::where('created_at', '>=', $thisWeekStart)
-                    ->where('created_at', '<=', $periodAnchor)
+                $previousPeriodLabel = sprintf(
+                    '%s - %s',
+                    $previousRangeStart->translatedFormat('d M Y'),
+                    $previousRangeEnd->translatedFormat('d M Y')
+                );
+                $selectedPeriodLabel = sprintf(
+                    '%s - %s',
+                    $rangeStart->translatedFormat('d M Y'),
+                    $rangeEnd->translatedFormat('d M Y')
+                );
+                $successTransactions = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
                     ->where('status', $successStatus)
-                    ->sum('amount');
-
-                $thisMonthRevenue = (int) Transaction::where('created_at', '>=', $thisMonthStart)
-                    ->where('created_at', '<=', $periodAnchor)
-                    ->where('status', $successStatus)
-                    ->sum('amount');
+                    ->count();
+                $successRate = $periodTransactions > 0
+                    ? round(($successTransactions / $periodTransactions) * 100)
+                    : 0;
 
                 $totalRevenue = (int) Transaction::where('status', $successStatus)
                     ->sum('amount');
 
                 $revenueSummary = [
-                    'today' => 'Rp ' . number_format($rangeRevenue, 0, ',', '.'),
-                    'yesterday' => 'Rp ' . number_format($previousRevenue, 0, ',', '.'),
-                    'thisWeek' => 'Rp ' . number_format($thisWeekRevenue, 0, ',', '.'),
-                    'thisMonth' => 'Rp ' . number_format($thisMonthRevenue, 0, ',', '.'),
+                    'today' => 'Rp ' . number_format($periodRevenue, 0, ',', '.'),
+                    'yesterday' => 'Rp ' . number_format($previousPeriodRevenue, 0, ',', '.'),
+                    'thisWeek' => (string) $periodTransactions,
+                    'thisMonth' => $successRate . '%',
                     'total' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
+                    'periodLabel' => $selectedPeriodLabel,
+                    'previousPeriodLabel' => $previousPeriodLabel,
                 ];
 
                 return [
                     'stats' => $stats,
                     'recentActivities' => $recentActivities,
-                    'performanceTargets' => $this->buildPerformanceTargets($reportStart, $reportEnd),
-                    'transactionChartData' => $this->buildTransactionChartForRange($reportStart, $reportEnd),
+                    'performanceTargets' => $this->buildPerformanceTargets($rangeStart, $rangeEnd),
+                    'transactionChartData' => $this->buildRangeTransactionChart($rangeStart, $rangeEnd),
                     'revenueSummary' => $revenueSummary,
                 ];
             }
@@ -152,12 +152,9 @@ class DashboardController extends Controller
             'performanceTargets' => $payload['performanceTargets'],
             'transactionChartData' => $payload['transactionChartData'],
             'revenueSummary' => $payload['revenueSummary'],
-            'reportRange' => [
-                'startDate' => $reportStart->toDateString(),
-                'endDate' => $reportEnd->toDateString(),
-                'label' => $reportStart->isSameDay($reportEnd)
-                    ? $reportStart->translatedFormat('d M Y')
-                    : $reportStart->translatedFormat('d M Y') . ' - ' . $reportEnd->translatedFormat('d M Y'),
+            'reportFilters' => [
+                'startDate' => $rangeStart->toDateString(),
+                'endDate' => $rangeEnd->toDateString(),
             ],
         ]);
     }
@@ -187,7 +184,7 @@ class DashboardController extends Controller
 
         $todayTransactionCount = Transaction::whereBetween('created_at', [$todayStart, $todayEnd])->count();
         $todayRevenue = (int) Transaction::whereBetween('created_at', [$todayStart, $todayEnd])
-            ->where('status', 'COMPLETED')
+            ->where('status', 'SUCCESS')
             ->sum('amount');
         $activeMachines = Machine::where('is_active', true)->count();
         $totalMachines = Machine::count();
@@ -205,27 +202,20 @@ class DashboardController extends Controller
         ];
     }
 
-    private function buildTransactionChartForRange(Carbon $rangeStart, Carbon $rangeEnd): array
+    private function buildRangeTransactionChart(Carbon $rangeStart, Carbon $rangeEnd): array
     {
-        $startDate = $rangeStart->copy()->startOfDay();
-        $endDate = $rangeEnd->copy()->endOfDay();
-
-        if ($startDate->diffInDays($endDate) + 1 > 31) {
-            $startDate = $endDate->copy()->subDays(30)->startOfDay();
-        }
-
         $raw = Transaction::select(
             DB::raw('DATE(created_at) as date'),
             DB::raw('COUNT(*) as total')
         )
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd])
             ->groupBy(DB::raw('DATE(created_at)'))
             ->pluck('total', 'date');
 
         $chart = [];
-        $totalDays = $startDate->diffInDays($endDate) + 1;
+        $totalDays = max(1, $rangeStart->diffInDays($rangeEnd) + 1);
         for ($i = 0; $i < $totalDays; $i++) {
-            $date = $startDate->copy()->addDays($i);
+            $date = $rangeStart->copy()->addDays($i);
             $dateKey = $date->toDateString();
 
             $chart[] = [
