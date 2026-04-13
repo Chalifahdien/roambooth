@@ -1,9 +1,17 @@
 import { Head, router } from '@inertiajs/react';
-import { Search, ReceiptText, Calendar, Wallet, CheckCircle2, XCircle, Clock, AlertCircle, Eye } from 'lucide-react';
+import { Search, ReceiptText, Calendar, CheckCircle2, Clock, AlertCircle, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Pagination } from '@/components/pagination';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -12,16 +20,8 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import transactionsRoute from '@/routes/transactions';
 import { cn } from '@/lib/utils';
+import transactionsRoute from '@/routes/transactions';
 // tes
 interface LinkProp {
     url: string | null;
@@ -109,11 +109,24 @@ export default function TransactionIndex({ transactions, filters }: Props) {
     };
 
     const formatDate = (date: string | null) => {
-        if (!date) return '-';
+        if (!date) {
+return '-';
+}
+
         return new Intl.DateTimeFormat('id-ID', {
             dateStyle: 'medium',
             timeStyle: 'short',
         }).format(new Date(date));
+    };
+
+    const formatPaymentType = (paymentType: string | null) => {
+        if (!paymentType) {
+return '-';
+}
+
+        return paymentType
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
     return (
@@ -179,6 +192,7 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                 <TableHead>Machine</TableHead>
                                 <TableHead>Template</TableHead>
                                 <TableHead className="text-right">Amount</TableHead>
+                                <TableHead>Payment Type</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                                 <TableHead>Started At</TableHead>
                                 <TableHead>Finished At</TableHead>
@@ -188,7 +202,7 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                         <TableBody>
                             {transactions.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center">
+                                    <TableCell colSpan={9} className="h-24 text-center">
                                         {(filters.search || filters.status)
                                             ? 'No transactions match your filters.'
                                             : 'No transactions found.'}
@@ -217,6 +231,9 @@ export default function TransactionIndex({ transactions, filters }: Props) {
                                             <TableCell>{transaction.template?.name || 'N/A'}</TableCell>
                                             <TableCell className="text-right font-semibold">
                                                 {formatCurrency(transaction.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {formatPaymentType(transaction.payment_type)}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <Badge variant="outline" className={cn("inline-flex items-center gap-1.5 font-medium px-2 py-0.5", config.color)}>

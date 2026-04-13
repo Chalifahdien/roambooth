@@ -2,7 +2,6 @@ import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
     Download,
-    Calendar,
     Clock,
     CreditCard,
     Monitor,
@@ -10,13 +9,12 @@ import {
     CheckCircle2,
     XCircle,
     AlertCircle,
-    ReceiptText,
     Image as ImageIcon,
     Video
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface Transaction {
@@ -77,8 +75,6 @@ export default function TransactionShow({ transaction }: Props) {
         color: 'bg-gray-500/10 text-gray-500',
         icon: AlertCircle
     };
-    const StatusIcon = config.icon;
-
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -88,11 +84,24 @@ export default function TransactionShow({ transaction }: Props) {
     };
 
     const formatDate = (date: string | null) => {
-        if (!date) return '-';
+        if (!date) {
+return '-';
+}
+
         return new Intl.DateTimeFormat('id-ID', {
             dateStyle: 'medium',
             timeStyle: 'short',
         }).format(new Date(date));
+    };
+
+    const formatPaymentType = (paymentType: string | null) => {
+        if (!paymentType) {
+return '-';
+}
+
+        return paymentType
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
     const handleDownload = (url: string, filename: string) => {
@@ -178,6 +187,10 @@ export default function TransactionShow({ transaction }: Props) {
 
                                 <div className="text-muted-foreground">Amount</div>
                                 <div className="font-bold">{formatCurrency(transaction.amount)}</div>
+
+                                <div className="text-muted-foreground">Payment Type</div>
+                                <div className="font-medium">{formatPaymentType(transaction.payment_type)}</div>
+
                                 <div className="text-muted-foreground">Paid At</div>
                                 <div>{transaction.status === 'SUCCESS' ? formatDate(transaction.finished_at) : '-'}</div>
 
