@@ -44,7 +44,7 @@ class DashboardController extends Controller
             "dashboard:metrics:{$reportStart->toDateString()}:{$reportEnd->toDateString()}",
             now()->addSeconds($cacheTtlSeconds),
             function () use ($reportStart, $reportEnd) {
-                $successStatus = 'SUCCESS';
+                $successStatus = 'COMPLETED';
                 $periodDays = $reportStart->diffInDays($reportEnd) + 1;
                 $previousPeriodEnd = $reportStart->copy()->subDay()->endOfDay();
                 $previousPeriodStart = $previousPeriodEnd->copy()->subDays($periodDays - 1)->startOfDay();
@@ -187,7 +187,7 @@ class DashboardController extends Controller
 
         $todayTransactionCount = Transaction::whereBetween('created_at', [$todayStart, $todayEnd])->count();
         $todayRevenue = (int) Transaction::whereBetween('created_at', [$todayStart, $todayEnd])
-            ->where('status', 'SUCCESS')
+            ->where('status', 'COMPLETED')
             ->sum('amount');
         $activeMachines = Machine::where('is_active', true)->count();
         $totalMachines = Machine::count();
