@@ -8,72 +8,92 @@ use App\Models\Voucher;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
         $timezone = config('app.timezone', 'Asia/Jakarta');
         $cacheTtlSeconds = (int) config('dashboard.cache_ttl_seconds', 120);
 
         $now = Carbon::now($timezone);
-        $todayStart = $now->copy()->startOfDay();
-        $todayEnd = $now->copy()->endOfDay();
-        $yesterdayStart = $todayStart->copy()->subDay()->startOfDay();
-        $yesterdayEnd = $todayStart->copy()->subDay()->endOfDay();
+        $validated = $request->validate([
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date'],
+        ]);
+
+        $startDate = $validated['start_date'] ?? null;
+        $endDate = $validated['end_date'] ?? null;
+
+        if ($startDate === null && $endDate === null) {
+            $reportStart = $now->copy()->startOfDay();
+            $reportEnd = $now->copy()->endOfDay();
+        } else {
+            $reportStart = Carbon::parse($startDate ?? $endDate, $timezone)->startOfDay();
+            $reportEnd = Carbon::parse($endDate ?? $startDate, $timezone)->endOfDay();
+        }
+
+        if ($reportEnd->lt($reportStart)) {
+            [$reportStart, $reportEnd] = [$reportEnd->copy()->startOfDay(), $reportStart->copy()->endOfDay()];
+        }
 
         $payload = Cache::remember(
-            "dashboard:metrics:{$todayStart->toDateString()}",
+            "dashboard:metrics:{$reportStart->toDateString()}:{$reportEnd->toDateString()}",
             now()->addSeconds($cacheTtlSeconds),
-            function () use ($todayStart, $todayEnd, $yesterdayStart, $yesterdayEnd, $now) {
-                $successStatus = 'COMPLETED';
+            function () use ($reportStart, $reportEnd) {
+                $successStatus = 'SUCCESS';
+                $periodDays = $reportStart->diffInDays($reportEnd) + 1;
+                $previousPeriodEnd = $reportStart->copy()->subDay()->endOfDay();
+                $previousPeriodStart = $previousPeriodEnd->copy()->subDays($periodDays - 1)->startOfDay();
 
-                $todayTransactions = Transaction::whereBetween('created_at', [$todayStart, $todayEnd])->count();
-                $yesterdayTransactions = Transaction::whereBetween('created_at', [$yesterdayStart, $yesterdayEnd])->count();
+                $rangeTransactions = Transaction::whereBetween('created_at', [$reportStart, $reportEnd])->count();
+                $previousTransactions = Transaction::whereBetween('created_at', [$previousPeriodStart, $previousPeriodEnd])->count();
 
-                $todayRevenue = (int) Transaction::whereBetween('created_at', [$todayStart, $todayEnd])
+                $rangeRevenue = (int) Transaction::whereBetween('created_at', [$reportStart, $reportEnd])
                     ->where('status', $successStatus)
                     ->sum('amount');
-                $yesterdayRevenue = (int) Transaction::whereBetween('created_at', [$yesterdayStart, $yesterdayEnd])
+                $previousRevenue = (int) Transaction::whereBetween('created_at', [$previousPeriodStart, $previousPeriodEnd])
                     ->where('status', $successStatus)
                     ->sum('amount');
 
-                $todaySessions = Transaction::whereBetween('started_at', [$todayStart, $todayEnd])->count();
-                $todayVoucherUsage = Transaction::whereBetween('created_at', [$todayStart, $todayEnd])
+                $rangeSessions = Transaction::whereBetween('started_at', [$reportStart, $reportEnd])->count();
+                $rangeVoucherUsage = Transaction::whereBetween('created_at', [$reportStart, $reportEnd])
                     ->whereNotNull('voucher_id')
                     ->count();
                 $activeVoucherCount = Voucher::where('status', 'ready')->count();
 
                 $stats = [
                     [
-                        'title' => 'Transaksi Hari Ini',
-                        'value' => (string) $todayTransactions,
-                        'change' => $this->formatChange($todayTransactions, $yesterdayTransactions, 'dari kemarin'),
+                        'title' => 'Transaksi Periode',
+                        'value' => (string) $rangeTransactions,
+                        'change' => $this->formatChange($rangeTransactions, $previousTransactions, 'dari periode sebelumnya'),
                         'icon' => 'credit-card',
                     ],
                     [
-                        'title' => 'Pendapatan Hari Ini',
-                        'value' => 'Rp ' . number_format($todayRevenue, 0, ',', '.'),
-                        'change' => $this->formatChange($todayRevenue, $yesterdayRevenue, 'dari kemarin'),
+                        'title' => 'Pendapatan Periode',
+                        'value' => 'Rp ' . number_format($rangeRevenue, 0, ',', '.'),
+                        'change' => $this->formatChange($rangeRevenue, $previousRevenue, 'dari periode sebelumnya'),
                         'icon' => 'dollar-sign',
                     ],
                     [
                         'title' => 'Sesi Photo Booth',
-                        'value' => (string) $todaySessions,
-                        'change' => 'Berdasarkan started_at hari ini',
+                        'value' => (string) $rangeSessions,
+                        'change' => 'Berdasarkan started_at pada periode dipilih',
                         'icon' => 'camera',
                     ],
                     [
                         'title' => 'Voucher Dipakai',
-                        'value' => (string) $todayVoucherUsage,
+                        'value' => (string) $rangeVoucherUsage,
                         'change' => $activeVoucherCount . ' voucher ready',
                         'icon' => 'ticket',
                     ],
                 ];
 
                 $recentActivities = Transaction::with(['machine:id,name', 'template:id,name'])
+                    ->whereBetween('created_at', [$reportStart, $reportEnd])
                     ->latest()
                     ->limit(4)
                     ->get()
@@ -91,14 +111,17 @@ class DashboardController extends Controller
                     ->values()
                     ->all();
 
-                $thisWeekStart = $now->copy()->startOfWeek();
-                $thisMonthStart = $now->copy()->startOfMonth();
+                $periodAnchor = $reportEnd->copy();
+                $thisWeekStart = $periodAnchor->copy()->startOfWeek();
+                $thisMonthStart = $periodAnchor->copy()->startOfMonth();
 
                 $thisWeekRevenue = (int) Transaction::where('created_at', '>=', $thisWeekStart)
+                    ->where('created_at', '<=', $periodAnchor)
                     ->where('status', $successStatus)
                     ->sum('amount');
 
                 $thisMonthRevenue = (int) Transaction::where('created_at', '>=', $thisMonthStart)
+                    ->where('created_at', '<=', $periodAnchor)
                     ->where('status', $successStatus)
                     ->sum('amount');
 
@@ -106,8 +129,8 @@ class DashboardController extends Controller
                     ->sum('amount');
 
                 $revenueSummary = [
-                    'today' => 'Rp ' . number_format($todayRevenue, 0, ',', '.'),
-                    'yesterday' => 'Rp ' . number_format($yesterdayRevenue, 0, ',', '.'),
+                    'today' => 'Rp ' . number_format($rangeRevenue, 0, ',', '.'),
+                    'yesterday' => 'Rp ' . number_format($previousRevenue, 0, ',', '.'),
                     'thisWeek' => 'Rp ' . number_format($thisWeekRevenue, 0, ',', '.'),
                     'thisMonth' => 'Rp ' . number_format($thisMonthRevenue, 0, ',', '.'),
                     'total' => 'Rp ' . number_format($totalRevenue, 0, ',', '.'),
@@ -116,8 +139,8 @@ class DashboardController extends Controller
                 return [
                     'stats' => $stats,
                     'recentActivities' => $recentActivities,
-                    'performanceTargets' => $this->buildPerformanceTargets($todayStart, $todayEnd),
-                    'transactionChartData' => $this->buildWeeklyTransactionChart($now),
+                    'performanceTargets' => $this->buildPerformanceTargets($reportStart, $reportEnd),
+                    'transactionChartData' => $this->buildTransactionChartForRange($reportStart, $reportEnd),
                     'revenueSummary' => $revenueSummary,
                 ];
             }
@@ -129,6 +152,13 @@ class DashboardController extends Controller
             'performanceTargets' => $payload['performanceTargets'],
             'transactionChartData' => $payload['transactionChartData'],
             'revenueSummary' => $payload['revenueSummary'],
+            'reportRange' => [
+                'startDate' => $reportStart->toDateString(),
+                'endDate' => $reportEnd->toDateString(),
+                'label' => $reportStart->isSameDay($reportEnd)
+                    ? $reportStart->translatedFormat('d M Y')
+                    : $reportStart->translatedFormat('d M Y') . ' - ' . $reportEnd->translatedFormat('d M Y'),
+            ],
         ]);
     }
 
@@ -175,10 +205,14 @@ class DashboardController extends Controller
         ];
     }
 
-    private function buildWeeklyTransactionChart(Carbon $now): array
+    private function buildTransactionChartForRange(Carbon $rangeStart, Carbon $rangeEnd): array
     {
-        $startDate = $now->copy()->startOfDay()->subDays(6);
-        $endDate = $now->copy()->endOfDay();
+        $startDate = $rangeStart->copy()->startOfDay();
+        $endDate = $rangeEnd->copy()->endOfDay();
+
+        if ($startDate->diffInDays($endDate) + 1 > 31) {
+            $startDate = $endDate->copy()->subDays(30)->startOfDay();
+        }
 
         $raw = Transaction::select(
             DB::raw('DATE(created_at) as date'),
@@ -188,23 +222,14 @@ class DashboardController extends Controller
             ->groupBy(DB::raw('DATE(created_at)'))
             ->pluck('total', 'date');
 
-        $labels = [
-            0 => 'Min',
-            1 => 'Sen',
-            2 => 'Sel',
-            3 => 'Rab',
-            4 => 'Kam',
-            5 => 'Jum',
-            6 => 'Sab',
-        ];
-
         $chart = [];
-        for ($i = 0; $i < 7; $i++) {
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+        for ($i = 0; $i < $totalDays; $i++) {
             $date = $startDate->copy()->addDays($i);
             $dateKey = $date->toDateString();
 
             $chart[] = [
-                'day' => $labels[$date->dayOfWeek],
+                'day' => $date->translatedFormat('d M'),
                 'total' => (int) ($raw[$dateKey] ?? 0),
             ];
         }

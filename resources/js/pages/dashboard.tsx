@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     BellRing,
     Camera,
@@ -11,6 +11,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
 import machinesRoute from '@/routes/machines';
 import templatesRoute from '@/routes/templates';
@@ -66,6 +68,11 @@ type DashboardPageProps = {
     performanceTargets: DashboardTarget[];
     transactionChartData: DashboardChartPoint[];
     revenueSummary: RevenueSummary;
+    reportRange: {
+        startDate: string;
+        endDate: string;
+        label: string;
+    };
 };
 
 const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
@@ -76,10 +83,33 @@ const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
 };
 
 export default function Dashboard() {
-    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary } =
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, reportRange } =
         usePage<DashboardPageProps>().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
     const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
+    const [startDate, setStartDate] = useState(reportRange.startDate);
+    const [endDate, setEndDate] = useState(reportRange.endDate);
+
+    const applyDateFilter = () => {
+        router.get(
+            dashboard({
+                query: {
+                    start_date: startDate,
+                    end_date: endDate,
+                },
+            }).url,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
+    const resetDateFilter = () => {
+        router.get(dashboard().url, {}, { preserveState: true, preserveScroll: true, replace: true });
+    };
 
     return (
         <>
@@ -92,7 +122,7 @@ export default function Dashboard() {
                                 Halo, {firstName}! 👋
                             </CardTitle>
                             <CardDescription>
-                                Ringkasan performa bisnis Potopi Photobooth hari ini.
+                                Ringkasan performa bisnis Potopi Photobooth untuk periode {reportRange.label}.
                             </CardDescription>
                         </div>
                         <Badge variant="secondary" className="gap-1">
@@ -100,6 +130,31 @@ export default function Dashboard() {
                             Trending Positif
                         </Badge>
                     </CardHeader>
+                </Card>
+
+                <Card className="py-4">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Filter Laporan Tanggal</CardTitle>
+                        <CardDescription>
+                            Lihat report dari tanggal berapa hingga tanggal berapa.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
+                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
+                            <span className="text-sm font-medium">Dari Tanggal</span>
+                            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+                        </div>
+                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
+                            <span className="text-sm font-medium">Sampai Tanggal</span>
+                            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button onClick={applyDateFilter}>Terapkan</Button>
+                            <Button variant="outline" onClick={resetDateFilter}>
+                                Reset
+                            </Button>
+                        </div>
+                    </CardContent>
                 </Card>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -133,11 +188,11 @@ export default function Dashboard() {
                         <CardContent>
                             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Hari Ini</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Periode Dipilih</p>
                                     <p className="text-xl font-bold">{revenueSummary.today}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Kemarin</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Periode Sebelumnya</p>
                                     <p className="text-xl font-bold">{revenueSummary.yesterday}</p>
                                 </div>
                                 <div className="space-y-1">
@@ -228,16 +283,16 @@ export default function Dashboard() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-7 items-end gap-3">
+                        <div className="flex items-end gap-3 overflow-x-auto pb-2">
                             {transactionChartData.length > 0 ? (
                                 transactionChartData.map((point) => {
                                     const barHeight = Math.max(10, Math.round((point.total / maxTransaction) * 140));
 
                                     return (
-                                        <div key={point.day} className="flex flex-col items-center gap-2">
+                                        <div key={point.day} className="flex min-w-10 flex-col items-center gap-2">
                                             <span className="text-xs font-medium">{point.total}</span>
                                             <div
-                                                className="w-full max-w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
+                                                className="w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
                                                 style={{ height: `${barHeight}px` }}
                                                 title={`${point.day}: ${point.total} transaksi`}
                                             />
@@ -246,7 +301,7 @@ export default function Dashboard() {
                                     );
                                 })
                             ) : (
-                                <div className="text-muted-foreground col-span-7 rounded-lg border border-dashed p-3 text-sm">
+                                <div className="text-muted-foreground w-full rounded-lg border border-dashed p-3 text-sm">
                                     Belum ada data transaksi untuk ditampilkan.
                                 </div>
                             )}
