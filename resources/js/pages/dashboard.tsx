@@ -1,354 +1,342 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { Activity, CircleCheck, Coins, GalleryVertical, TrendingUp } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import {
+    BellRing,
+    Camera,
+    CheckCircle2,
+    CreditCard,
+    DollarSign,
+    Gauge,
+    Sparkles,
+    Ticket,
+    TrendingUp,
+} from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { dashboard } from '@/routes';
+import machinesRoute from '@/routes/machines';
+import templatesRoute from '@/routes/templates';
+import vouchersRoute from '@/routes/vouchers';
 
-type ReportRange = {
-    startDate: string;
-    endDate: string;
+type IconKey = 'credit-card' | 'dollar-sign' | 'camera' | 'ticket';
+
+type DashboardStat = {
+    title: string;
+    value: string;
+    change: string;
+    icon: IconKey;
+};
+
+type DashboardActivity = {
+    id: number;
+    title: string;
+    time: string;
+};
+
+type DashboardTarget = {
     label: string;
+    value: number;
 };
 
-type SummaryCards = {
-    totalSessions: number;
-    totalRevenue: number;
-    successfulTransactions: number;
-    averagePerSession: number;
-};
-
-type DailyChartPoint = {
+type DashboardChartPoint = {
     day: string;
-    sessions: number;
-    revenue: number;
+    total: number;
 };
 
-type PaymentStatusRow = {
-    status: string;
-    count: number;
-    totalAmount: number;
-};
-
-type SessionStatusRow = {
-    status: string;
-    count: number;
-};
-
-type TopMachineRow = {
-    id: number;
-    name: string;
-    sessions: number;
-};
-
-type TopTemplateRow = {
-    id: number;
-    name: string;
-    usage: number;
+type RevenueSummary = {
+    today: string;
+    yesterday: string;
+    thisWeek: string;
+    thisMonth: string;
+    total: string;
 };
 
 type DashboardPageProps = {
-    reportRange: ReportRange;
-    summaryCards: SummaryCards;
-    dailyCharts: DailyChartPoint[];
-    paymentStatus: PaymentStatusRow[];
-    sessionStatus: SessionStatusRow[];
-    topMachines: TopMachineRow[];
-    topTemplates: TopTemplateRow[];
-};
-
-const quickRanges = [
-    { label: 'Last 7 days', days: 7 },
-    { label: 'Last 30 days', days: 30 },
-    { label: 'This month', preset: 'this-month' as const },
-    { label: 'Last month', preset: 'last-month' as const },
-];
-
-const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value);
-
-const formatStatus = (value: string) =>
-    value
-        .replace(/_/g, ' ')
-        .toLowerCase()
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const toDateValue = (date: Date) => date.toISOString().slice(0, 10);
-
-const buildRange = (input: (typeof quickRanges)[number]) => {
-    const today = new Date();
-    const end = new Date(today);
-    let start = new Date(today);
-
-    if (input.days !== undefined) {
-        start.setDate(today.getDate() - (input.days - 1));
-    } else if (input.preset === 'this-month') {
-        start = new Date(today.getFullYear(), today.getMonth(), 1);
-    } else {
-        start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
-    }
-
-    return {
-        start_date: toDateValue(start),
-        end_date: toDateValue(end),
+    auth?: { user?: { name?: string } };
+    stats: DashboardStat[];
+    recentActivities: DashboardActivity[];
+    performanceTargets: DashboardTarget[];
+    transactionChartData: DashboardChartPoint[];
+    revenueSummary: RevenueSummary;
+    reportRange: {
+        startDate: string;
+        endDate: string;
+        label: string;
     };
 };
 
-type MiniBarChartProps = {
-    data: DailyChartPoint[];
-    valueKey: 'sessions' | 'revenue';
-    colorClass: string;
+const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
+    'credit-card': CreditCard,
+    'dollar-sign': DollarSign,
+    camera: Camera,
+    ticket: Ticket,
 };
 
-function MiniBarChart({ data, valueKey, colorClass }: MiniBarChartProps) {
-    const maxValue = Math.max(1, ...data.map((item) => item[valueKey]));
-
-    return (
-        <div className="flex min-h-[230px] items-end gap-2 overflow-x-auto pb-2">
-            {data.map((item) => {
-                const value = item[valueKey];
-                const height = Math.max(8, Math.round((value / maxValue) * 155));
-
-                return (
-                    <div key={`${valueKey}-${item.day}`} className="flex min-w-[28px] flex-col items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground">{value}</span>
-                        <div className={`w-5 rounded-sm ${colorClass}`} style={{ height }} title={`${item.day}: ${value}`} />
-                        <span className="text-[10px] text-muted-foreground">{item.day}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-}
-
 export default function Dashboard() {
-    const { reportRange, summaryCards, dailyCharts, paymentStatus, sessionStatus, topMachines, topTemplates } =
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, reportRange } =
         usePage<DashboardPageProps>().props;
+    const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
+    const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
     const [startDate, setStartDate] = useState(reportRange.startDate);
     const [endDate, setEndDate] = useState(reportRange.endDate);
 
-    const applyFilter = () => {
+    const applyDateFilter = () => {
         router.get(
             dashboard({
-                query: { start_date: startDate, end_date: endDate },
+                query: {
+                    start_date: startDate,
+                    end_date: endDate,
+                },
             }).url,
             {},
-            { preserveState: true, preserveScroll: true, replace: true },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
         );
+    };
+
+    const resetDateFilter = () => {
+        router.get(dashboard().url, {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     return (
         <>
             <Head title="Dashboard" />
-
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-                <Card>
-                    <CardHeader className="pb-3">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <CardTitle className="text-base">Period Filter</CardTitle>
-                            <div className="flex flex-wrap gap-2">
-                                {quickRanges.map((item) => (
-                                    <Button
-                                        key={item.label}
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            router.get(
-                                                dashboard({ query: buildRange(item) }).url,
-                                                {},
-                                                { preserveState: true, preserveScroll: true, replace: true },
-                                            )
-                                        }
-                                    >
-                                        {item.label}
-                                    </Button>
-                                ))}
-                            </div>
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <Card className="py-4">
+                    <CardHeader className="flex flex-row items-center justify-between gap-3">
+                        <div>
+                            <CardTitle className="text-xl">
+                                Halo, {firstName}! 👋
+                            </CardTitle>
+                            <CardDescription>
+                                Ringkasan performa bisnis Potopi Photobooth untuk periode {reportRange.label}.
+                            </CardDescription>
                         </div>
+                        <Badge variant="secondary" className="gap-1">
+                            <TrendingUp className="h-3.5 w-3.5" />
+                            Trending Positif
+                        </Badge>
+                    </CardHeader>
+                </Card>
+
+                <Card className="py-4">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Filter Laporan Tanggal</CardTitle>
+                        <CardDescription>
+                            Lihat report dari tanggal berapa hingga tanggal berapa.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3 md:flex-row md:items-end">
-                        <div className="grid gap-1.5">
-                            <span className="text-xs font-medium text-muted-foreground">From Date</span>
-                            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="w-[210px]" />
+                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
+                            <span className="text-sm font-medium">Dari Tanggal</span>
+                            <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
                         </div>
-                        <div className="grid gap-1.5">
-                            <span className="text-xs font-medium text-muted-foreground">To Date</span>
-                            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="w-[210px]" />
+                        <div className="grid w-full gap-1.5 md:max-w-[220px]">
+                            <span className="text-sm font-medium">Sampai Tanggal</span>
+                            <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
                         </div>
-                        <Button onClick={applyFilter}>Apply</Button>
+                        <div className="flex gap-2">
+                            <Button onClick={applyDateFilter}>Terapkan</Button>
+                            <Button variant="outline" onClick={resetDateFilter}>
+                                Reset
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <Card>
-                        <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total Sessions</p>
-                                <p className="text-3xl font-semibold">{summaryCards.totalSessions}</p>
+                    {stats.map((item) => {
+                        const Icon = iconMap[item.icon] ?? CreditCard;
+
+                        return (
+                            <Card key={item.title} className="py-5">
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                                    <CardDescription>{item.title}</CardDescription>
+                                    <Icon className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{item.value}</div>
+                                    <p className="text-muted-foreground mt-1 text-xs">{item.change}</p>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+
+                <div className="grid gap-4">
+                    <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                Rincian Total Pendapatan
+                            </CardTitle>
+                            <CardDescription>Akumulasi pendapatan dari seluruh transaksi berstatus berhasil (SUCCESS).</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Periode Dipilih</p>
+                                    <p className="text-xl font-bold">{revenueSummary.today}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Periode Sebelumnya</p>
+                                    <p className="text-xl font-bold">{revenueSummary.yesterday}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Minggu Ini</p>
+                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisWeek}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Bulan Ini</p>
+                                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{revenueSummary.thisMonth}</p>
+                                </div>
+                                <div className="space-y-1 border-t md:border-l md:border-t-0 md:pl-4 pt-2 md:pt-0 col-span-2 md:col-span-1 border-border">
+                                    <p className="text-sm font-medium text-muted-foreground">Total Keseluruhan</p>
+                                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{revenueSummary.total}</p>
+                                </div>
                             </div>
-                            <Activity className="h-7 w-7 text-blue-500" />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Total Revenue</p>
-                                <p className="text-3xl font-semibold">{formatCurrency(summaryCards.totalRevenue)}</p>
-                            </div>
-                            <Coins className="h-7 w-7 text-green-500" />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Successful Transactions</p>
-                                <p className="text-3xl font-semibold">{summaryCards.successfulTransactions}</p>
-                            </div>
-                            <CircleCheck className="h-7 w-7 text-emerald-500" />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center justify-between p-4">
-                            <div>
-                                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Avg per Session</p>
-                                <p className="text-3xl font-semibold">{formatCurrency(summaryCards.averagePerSession)}</p>
-                            </div>
-                            <TrendingUp className="h-7 w-7 text-fuchsia-500" />
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                    <Card>
+                <div className="grid gap-4 lg:grid-cols-3">
+                    <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle className="text-base">Sessions per Day</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <BellRing className="h-4 w-4" />
+                                Aktivitas Terbaru
+                            </CardTitle>
+                            <CardDescription>Update penting 1-2 jam terakhir.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <MiniBarChart data={dailyCharts} valueKey="sessions" colorClass="bg-blue-500/85" />
+                        <CardContent className="space-y-3">
+                            {recentActivities.length > 0 ? (
+                                recentActivities.map((activity) => (
+                                    <div key={activity.id} className="flex items-center justify-between rounded-lg border p-3">
+                                        <div className="flex items-start gap-2">
+                                            <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-500" />
+                                            <p className="text-sm">{activity.title}</p>
+                                        </div>
+                                        <span className="text-muted-foreground text-xs">{activity.time}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-muted-foreground rounded-lg border border-dashed p-3 text-sm">
+                                    Belum ada aktivitas terbaru.
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Revenue per Day</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <MiniBarChart data={dailyCharts} valueKey="revenue" colorClass="bg-green-500/85" />
-                        </CardContent>
-                    </Card>
-                </div>
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Payment Status</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground uppercase">
-                                        <th className="py-2">Status</th>
-                                        <th className="py-2 text-right">Count</th>
-                                        <th className="py-2 text-right">Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paymentStatus.map((row) => (
-                                        <tr key={row.status} className="border-b last:border-0">
-                                            <td className="py-2">{formatStatus(row.status)}</td>
-                                            <td className="py-2 text-right">{row.count}</td>
-                                            <td className="py-2 text-right">{formatCurrency(row.totalAmount)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Session Status</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground uppercase">
-                                        <th className="py-2">Status</th>
-                                        <th className="py-2 text-right">Count</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sessionStatus.map((row) => (
-                                        <tr key={row.status} className="border-b last:border-0">
-                                            <td className="py-2">{formatStatus(row.status)}</td>
-                                            <td className="py-2 text-right">{row.count}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Top Machines (by Sessions)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground uppercase">
-                                        <th className="py-2">#</th>
-                                        <th className="py-2">Machine</th>
-                                        <th className="py-2 text-right">Sessions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {topMachines.map((row, index) => (
-                                        <tr key={row.id} className="border-b last:border-0">
-                                            <td className="py-2">{index + 1}</td>
-                                            <td className="py-2">{row.name}</td>
-                                            <td className="py-2 text-right">{row.sessions}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </CardContent>
-                    </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-base">
-                                <GalleryVertical className="h-4 w-4" />
-                                Top Templates (by Usage)
+                                <Gauge className="h-4 w-4" />
+                                Target Harian
                             </CardTitle>
+                            <CardDescription>Progress terhadap target operasional.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground uppercase">
-                                        <th className="py-2">#</th>
-                                        <th className="py-2">Template</th>
-                                        <th className="py-2 text-right">Usage</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {topTemplates.map((row, index) => (
-                                        <tr key={row.id} className="border-b last:border-0">
-                                            <td className="py-2">{index + 1}</td>
-                                            <td className="py-2">{row.name}</td>
-                                            <td className="py-2 text-right">{row.usage}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <CardContent className="space-y-4">
+                            {performanceTargets.map((target) => (
+                                <div key={target.label} className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span>{target.label}</span>
+                                        <span className="font-medium">{target.value}%</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-muted">
+                                        <div
+                                            className="h-2 rounded-full bg-primary"
+                                            style={{ width: `${target.value}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
                         </CardContent>
+                        <CardFooter>
+                            <Button size="sm" className="w-full">
+                                Lihat Laporan Lengkap
+                            </Button>
+                        </CardFooter>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <TrendingUp className="h-4 w-4" />
+                            Grafik Transaksi Mingguan
+                        </CardTitle>
+                        <CardDescription>
+                            Tren jumlah transaksi selama 7 hari terakhir.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-end gap-3 overflow-x-auto pb-2">
+                            {transactionChartData.length > 0 ? (
+                                transactionChartData.map((point) => {
+                                    const barHeight = Math.max(10, Math.round((point.total / maxTransaction) * 140));
+
+                                    return (
+                                        <div key={point.day} className="flex min-w-10 flex-col items-center gap-2">
+                                            <span className="text-xs font-medium">{point.total}</span>
+                                            <div
+                                                className="w-10 rounded-md bg-primary/85 transition-all hover:bg-primary"
+                                                style={{ height: `${barHeight}px` }}
+                                                title={`${point.day}: ${point.total} transaksi`}
+                                            />
+                                            <span className="text-muted-foreground text-xs">{point.day}</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-muted-foreground w-full rounded-lg border border-dashed p-3 text-sm">
+                                    Belum ada data transaksi untuk ditampilkan.
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Sparkles className="h-4 w-4" />
+                            Aksi Cepat
+                        </CardTitle>
+                        <CardDescription>
+                            Shortcut untuk aktivitas yang sering dilakukan.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 md:grid-cols-3">
+                        <Button variant="outline" asChild>
+                            <Link href={vouchersRoute.index().url}>
+                                Buat Voucher Baru
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={templatesRoute.create().url}>
+                                Tambah Template
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={machinesRoute.index().url}>
+                                Cek Status Mesin
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         </>
     );
