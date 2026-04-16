@@ -29,6 +29,7 @@ const formatDate = (date: string | null) => {
 interface FinalImage {
     id: number;
     transaction_id: number;
+    token: string;
     image_path: string;
     video_path: string | null;
     image_url: string;
@@ -164,7 +165,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
 
                                     {/* Hover Actions */}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                                         <Button
+                                        <Button
                                             variant="secondary"
                                             size="icon"
                                             className="h-8 w-8 shadow-md"
@@ -259,14 +260,21 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                         >
                                             <Download className="mr-2 h-4 w-4" /> Download Result
                                         </Button>
-                                         <Button
+                                        <Button
                                             variant="outline"
                                             className="w-full"
                                             onClick={() => router.get(transactionsRoute.show({ transaction: selectedImage.transaction_id }).url)}
                                         >
                                             <ExternalLink className="mr-2 h-4 w-4" /> View Transaction Details
                                         </Button>
-                                         {selectedImage.video_url && (
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => window.open(`/downloads/${selectedImage.token}`, '_blank')}
+                                        >
+                                            <ExternalLink className="mr-2 h-4 w-4" /> Download Link
+                                        </Button>
+                                        {selectedImage.video_url && (
                                             <Button
                                                 variant="outline"
                                                 className="w-full"
