@@ -136,12 +136,60 @@ class DashboardController extends Controller
                     'previousPeriodLabel' => $previousPeriodLabel,
                 ];
 
+                // --- QRIS & Voucher transaction breakdown ---
+                $qrisQuery = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
+                    ->where('status', $successStatus)
+                    ->whereRaw('LOWER(payment_type) = ?', ['qris']);
+                $qrisCount = (clone $qrisQuery)->count();
+                $qrisTotal = (int) (clone $qrisQuery)->sum('amount');
+
+                $voucherQuery = Transaction::whereBetween('created_at', [$rangeStart, $rangeEnd])
+                    ->where('status', $successStatus)
+                    ->whereNotNull('voucher_id');
+                $voucherCount = (clone $voucherQuery)->count();
+                $voucherTotal = (int) (clone $voucherQuery)->sum('amount');
+
+                // All-time accumulated
+                $allQrisQuery = Transaction::where('status', $successStatus)
+                    ->whereRaw('LOWER(payment_type) = ?', ['qris']);
+                $allQrisCount = (clone $allQrisQuery)->count();
+                $allQrisTotal = (int) (clone $allQrisQuery)->sum('amount');
+
+                $allVoucherQuery = Transaction::where('status', $successStatus)
+                    ->whereNotNull('voucher_id');
+                $allVoucherCount = (clone $allVoucherQuery)->count();
+                $allVoucherTotal = (int) (clone $allVoucherQuery)->sum('amount');
+
+                $transactionBreakdown = [
+                    'qris' => [
+                        'count' => $qrisCount,
+                        'total' => 'Rp ' . number_format($qrisTotal, 0, ',', '.'),
+                        'totalRaw' => $qrisTotal,
+                    ],
+                    'voucher' => [
+                        'count' => $voucherCount,
+                        'total' => 'Rp ' . number_format($voucherTotal, 0, ',', '.'),
+                        'totalRaw' => $voucherTotal,
+                    ],
+                    'allTime' => [
+                        'qris' => [
+                            'count' => $allQrisCount,
+                            'total' => 'Rp ' . number_format($allQrisTotal, 0, ',', '.'),
+                        ],
+                        'voucher' => [
+                            'count' => $allVoucherCount,
+                            'total' => 'Rp ' . number_format($allVoucherTotal, 0, ',', '.'),
+                        ],
+                    ],
+                ];
+
                 return [
                     'stats' => $stats,
                     'recentActivities' => $recentActivities,
                     'performanceTargets' => $this->buildPerformanceTargets($rangeStart, $rangeEnd),
                     'transactionChartData' => $this->buildRangeTransactionChart($rangeStart, $rangeEnd),
                     'revenueSummary' => $revenueSummary,
+                    'transactionBreakdown' => $transactionBreakdown,
                 ];
             }
         );
@@ -152,6 +200,7 @@ class DashboardController extends Controller
             'performanceTargets' => $payload['performanceTargets'],
             'transactionChartData' => $payload['transactionChartData'],
             'revenueSummary' => $payload['revenueSummary'],
+            'transactionBreakdown' => $payload['transactionBreakdown'],
             'reportFilters' => [
                 'startDate' => $rangeStart->toDateString(),
                 'endDate' => $rangeEnd->toDateString(),

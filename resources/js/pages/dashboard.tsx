@@ -6,6 +6,7 @@ import {
     CreditCard,
     DollarSign,
     Gauge,
+    QrCode,
     Sparkles,
     Ticket,
     TrendingUp,
@@ -63,6 +64,21 @@ type RevenueSummary = {
     previousPeriodLabel: string;
 };
 
+type BreakdownItem = {
+    count: number;
+    total: string;
+    totalRaw?: number;
+};
+
+type TransactionBreakdown = {
+    qris: BreakdownItem;
+    voucher: BreakdownItem;
+    allTime: {
+        qris: { count: number; total: string };
+        voucher: { count: number; total: string };
+    };
+};
+
 type ReportFilters = {
     startDate: string;
     endDate: string;
@@ -75,6 +91,7 @@ type DashboardPageProps = {
     performanceTargets: DashboardTarget[];
     transactionChartData: DashboardChartPoint[];
     revenueSummary: RevenueSummary;
+    transactionBreakdown: TransactionBreakdown;
     reportFilters: ReportFilters;
 };
 
@@ -86,7 +103,7 @@ const iconMap: Record<IconKey, ComponentType<{ className?: string }>> = {
 };
 
 export default function Dashboard() {
-    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, reportFilters } =
+    const { auth, stats, recentActivities, performanceTargets, transactionChartData, revenueSummary, transactionBreakdown, reportFilters } =
         usePage<DashboardPageProps>().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'Tim';
     const maxTransaction = Math.max(1, ...transactionChartData.map((item) => item.total));
@@ -230,6 +247,87 @@ export default function Dashboard() {
                                 <div className="space-y-1 border-t md:border-l md:border-t-0 md:pl-4 pt-2 md:pt-0 col-span-2 md:col-span-1 border-border">
                                     <p className="text-sm font-medium text-muted-foreground">Total Keseluruhan</p>
                                     <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{revenueSummary.total}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* --- QRIS & Voucher Breakdown --- */}
+                <div className="grid gap-4 md:grid-cols-2">
+                    {/* QRIS Card */}
+                    <Card className="border-purple-200 bg-purple-50/50 dark:border-purple-900 dark:bg-purple-950/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <QrCode className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                Transaksi QRIS
+                            </CardTitle>
+                            <CardDescription>
+                                Akumulasi transaksi via pembayaran QRIS
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Jumlah (Periode)</p>
+                                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{transactionBreakdown.qris.count}</p>
+                                    <p className="text-xs text-muted-foreground">transaksi</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Total (Periode)</p>
+                                    <p className="text-2xl font-bold">{transactionBreakdown.qris.total}</p>
+                                </div>
+                            </div>
+                            <div className="mt-4 border-t pt-3 border-border">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Akumulasi Keseluruhan</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs text-muted-foreground">Total Transaksi</p>
+                                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{transactionBreakdown.allTime.qris.count}</p>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs text-muted-foreground">Total Pendapatan</p>
+                                        <p className="text-lg font-bold text-purple-700 dark:text-purple-300">{transactionBreakdown.allTime.qris.total}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Voucher Card */}
+                    <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Ticket className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                Transaksi Voucher
+                            </CardTitle>
+                            <CardDescription>
+                                Akumulasi transaksi menggunakan voucher
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Jumlah (Periode)</p>
+                                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{transactionBreakdown.voucher.count}</p>
+                                    <p className="text-xs text-muted-foreground">transaksi</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Total (Periode)</p>
+                                    <p className="text-2xl font-bold">{transactionBreakdown.voucher.total}</p>
+                                </div>
+                            </div>
+                            <div className="mt-4 border-t pt-3 border-border">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Akumulasi Keseluruhan</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs text-muted-foreground">Total Transaksi</p>
+                                        <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{transactionBreakdown.allTime.voucher.count}</p>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <p className="text-xs text-muted-foreground">Total Pendapatan</p>
+                                        <p className="text-lg font-bold text-amber-700 dark:text-amber-300">{transactionBreakdown.allTime.voucher.total}</p>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
