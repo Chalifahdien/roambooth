@@ -48,4 +48,15 @@ class TransactionController extends Controller
             'transaction' => $transaction,
         ]);
     }
+
+    /**
+     * Remove the specified transaction from storage.
+     */
+    public function destroy(Transaction $transaction)
+    {
+        $transaction->delete();
+
+        return redirect()->route('transactions.index')
+            ->with('message', 'Transaction deleted successfully.');
+    }
 }

@@ -10,8 +10,10 @@ import {
     XCircle,
     AlertCircle,
     Image as ImageIcon,
-    Video
+    Video,
+    Trash2
 } from 'lucide-react';
+import { router } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -113,6 +115,12 @@ return '-';
         document.body.removeChild(link);
     };
 
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+            router.delete(`/transactions/${transaction.id}`);
+        }
+    };
+
     return (
         <>
             <Head title={`Transaction #${transaction.transaction_id}`} />
@@ -126,11 +134,21 @@ return '-';
                         </p>
                     </div>
 
-                    <Link href="/transactions">
-                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-md">
-                            <ArrowLeft className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="destructive"
+                            size="icon"
+                            className="h-9 w-9 rounded-md"
+                            onClick={handleDelete}
+                        >
+                            <Trash2 className="h-4 w-4" />
                         </Button>
-                    </Link>
+                        <Link href="/transactions">
+                            <Button variant="outline" size="icon" className="h-9 w-9 rounded-md">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">

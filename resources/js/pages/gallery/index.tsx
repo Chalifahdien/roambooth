@@ -15,7 +15,7 @@ import galleryRoute from '@/routes/gallery';
 import transactionsRoute from '@/routes/transactions';
 
 const formatDate = (date: string | null) => {
-    if (!date) return '-';
+    if (!date) { return '-'; }
     try {
         return new Intl.DateTimeFormat('id-ID', {
             dateStyle: 'medium',
@@ -307,7 +307,7 @@ GalleryIndex.layout = (page: any) => (
     <AppLayout children={page} />
 );
 
-// This is if we use the default layout without pre-defined breadcrumbs in controller, 
+// This is if we use the default layout without pre-defined breadcrumbs in controller,
 // but since I don't see GuestLayout usage here, I'll stick to AppLayout.
 // Wait, I need to check where AppLayout is.
 import AppLayout from '@/layouts/app-layout';
