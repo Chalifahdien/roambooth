@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,6 +55,25 @@ class TransactionController extends Controller
      */
     public function destroy(Transaction $transaction)
     {
+        $transaction->load(['photos', 'finalImage']);
+
+        // Delete session photos
+        foreach ($transaction->photos as $photo) {
+            if ($photo->photo_path) {
+                Storage::disk('public')->delete($photo->photo_path);
+            }
+        }
+
+        // Delete final image and video
+        if ($transaction->finalImage) {
+            if ($transaction->finalImage->image_path) {
+                Storage::disk('public')->delete($transaction->finalImage->image_path);
+            }
+            if ($transaction->finalImage->video_path) {
+                Storage::disk('public')->delete($transaction->finalImage->video_path);
+            }
+        }
+
         $transaction->delete();
 
         return redirect()->route('transactions.index')
