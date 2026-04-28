@@ -12,6 +12,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { MachineSwitcher } from '@/components/ui/machine-switcher';
 import { dashboard } from '@/routes';
 import machines from '@/routes/machines';
 import paperSizes from '@/routes/paper-sizes';
@@ -79,27 +80,7 @@ export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            tooltip={{ children: 'Potopi Photobooth' }}
-                        >
-                            <Link
-                                href={dashboard()}
-                                prefetch
-                                className="flex min-h-0 w-full min-w-0 items-center justify-center gap-2 px-1"
-                            >
-                                <img
-                                    src="/images/logo.png"
-                                    alt="Potopi Photobooth"
-                                    className="mx-auto h-auto max-h-11 w-full max-w-[min(100%,14rem)] object-contain object-center group-data-[collapsible=icon]:h-7 group-data-[collapsible=icon]:w-7 group-data-[collapsible=icon]:max-h-7 group-data-[collapsible=icon]:max-w-none"
-                                />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <MachineSwitcher />
             </SidebarHeader>
 
             <SidebarContent>

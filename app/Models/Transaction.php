@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Traits\BelongsToMachine;
+
 class Transaction extends Model
 {
+    use BelongsToMachine;
     protected $fillable = [
         'transaction_id',
         'machine_id',

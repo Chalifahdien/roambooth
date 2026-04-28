@@ -35,6 +35,15 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $machines = \App\Models\Machine::orderBy('name')->get();
+        $activeMachineId = $request->session()->get('active_machine_id');
+        $activeMachine = $machines->firstWhere('id', $activeMachineId) ?? $machines->first();
+
+        // Optional: auto-set session if it's missing but we have a machine
+        if (!$activeMachineId && $activeMachine) {
+            $request->session()->put('active_machine_id', $activeMachine->id);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +51,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'machines' => $machines,
+            'activeMachine' => $activeMachine,
         ];
     }
 }

@@ -6,12 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use App\Models\Traits\BelongsToMachine;
+
 class Template extends Model
 {
     /** @use HasFactory<\Database\Factories\TemplateFactory> */
-    use HasFactory;
+    use HasFactory, BelongsToMachine;
 
     protected $fillable = [
+        'machine_id',
         'paper_size_id',
         'name',
         'type',
@@ -46,5 +49,10 @@ class Template extends Model
     public function paperSize()
     {
         return $this->belongsTo(PaperSize::class);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
     }
 }

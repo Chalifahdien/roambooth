@@ -59,7 +59,6 @@ interface Props {
 }
 
 export default function MachineIndex({ machines }: Props) {
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
@@ -95,12 +94,6 @@ export default function MachineIndex({ machines }: Props) {
         amount_print_flipbook: 0,
     });
 
-    const openCreateModal = () => {
-        reset();
-        clearErrors();
-        setIsCreateModalOpen(true);
-    };
-
     const openEditModal = (machine: Machine) => {
         setSelectedMachine(machine);
         setData({
@@ -122,17 +115,6 @@ export default function MachineIndex({ machines }: Props) {
     const openDeleteModal = (machine: Machine) => {
         setSelectedMachine(machine);
         setIsDeleteModalOpen(true);
-    };
-
-    const submitCreate = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(machinesRoute.store().url, {
-            onSuccess: () => {
-                setIsCreateModalOpen(false);
-                reset();
-                toast.success('Machine created successfully');
-            },
-        });
     };
 
     const submitEdit = (e: React.FormEvent) => {
@@ -189,9 +171,6 @@ export default function MachineIndex({ machines }: Props) {
                             Manage your photobooth machines here.
                         </p>
                     </div>
-                    <Button onClick={openCreateModal}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Machine
-                    </Button>
                 </div>
 
                 <div className="overflow-hidden rounded-xl border bg-card">
@@ -245,6 +224,7 @@ export default function MachineIndex({ machines }: Props) {
                     <Table>
                         <TableHeader className='bg-sidebar'>
                             <TableRow>
+                                <TableHead className="w-16">ID</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Payment</TableHead>
@@ -255,7 +235,7 @@ export default function MachineIndex({ machines }: Props) {
                         <TableBody>
                             {filteredMachines.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         {(searchQuery || statusFilter !== 'all' || paymentFilter !== 'all')
                                             ? 'No machines match your filters.'
                                             : 'No machines found.'}
@@ -264,6 +244,7 @@ export default function MachineIndex({ machines }: Props) {
                             ) : (
                                 filteredMachines.map((machine) => (
                                     <TableRow key={machine.id}>
+                                        <TableCell className="font-medium text-muted-foreground">#{machine.id}</TableCell>
                                         <TableCell className="font-medium">{machine.name}</TableCell>
                                         <TableCell>
                                             <Badge variant={machine.is_active ? 'default' : 'secondary'}>
@@ -318,128 +299,6 @@ export default function MachineIndex({ machines }: Props) {
                     </Table>
                 </div>
             </div>
-
-            {/* Create Machine Modal */}
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent>
-                    <form onSubmit={submitCreate}>
-                        <DialogHeader>
-                            <DialogTitle>Add Machine</DialogTitle>
-                            <DialogDescription>
-                                Create a new machine for your photobooth system.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="e.g. Booth A"
-                                />
-                                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="is_active">Is Active</Label>
-                                    <p className="text-[0.8rem] text-muted-foreground">Enable or disable this machine.</p>
-                                </div>
-                                <Switch
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onCheckedChange={(checked) => setData('is_active', checked)}
-                                />
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="payment_required">Payment Required</Label>
-                                    <p className="text-[0.8rem] text-muted-foreground">Specify if payment is mandatory.</p>
-                                </div>
-                                <Switch
-                                    id="payment_required"
-                                    checked={data.payment_required}
-                                    onCheckedChange={(checked) => setData('payment_required', checked)}
-                                />
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-medium leading-none">Photo Concept Price (IDR)</h4>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_koran">Koran</Label>
-                                        <Input
-                                            id="amount_koran"
-                                            type="number"
-                                            value={data.amount_koran}
-                                            onChange={(e) => setData('amount_koran', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_reguler">Reguler</Label>
-                                        <Input
-                                            id="amount_reguler"
-                                            type="number"
-                                            value={data.amount_reguler}
-                                            onChange={(e) => setData('amount_reguler', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_flipbook">Flipbook</Label>
-                                        <Input
-                                            id="amount_flipbook"
-                                            type="number"
-                                            value={data.amount_flipbook}
-                                            onChange={(e) => setData('amount_flipbook', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-medium leading-none">Printing Cost (IDR)</h4>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_print_koran">Koran</Label>
-                                        <Input
-                                            id="amount_print_koran"
-                                            type="number"
-                                            value={data.amount_print_koran}
-                                            onChange={(e) => setData('amount_print_koran', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_print_reguler">Reguler</Label>
-                                        <Input
-                                            id="amount_print_reguler"
-                                            type="number"
-                                            value={data.amount_print_reguler}
-                                            onChange={(e) => setData('amount_print_reguler', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="amount_print_flipbook">Flipbook</Label>
-                                        <Input
-                                            id="amount_print_flipbook"
-                                            type="number"
-                                            value={data.amount_print_flipbook}
-                                            onChange={(e) => setData('amount_print_flipbook', parseInt(e.target.value) || 0)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={processing}>
-                                Create Machine
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
 
             {/* Edit Machine Modal */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

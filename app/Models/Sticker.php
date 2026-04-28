@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\Traits\BelongsToMachine;
+
 class Sticker extends Model
 {
+    use BelongsToMachine;
     protected $fillable = [
+        'machine_id',
         'name',
         'category',
         'image_path',
@@ -18,5 +22,10 @@ class Sticker extends Model
     public function getImageUrlAttribute(): string
     {
         return asset('storage/' . $this->image_path);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
     }
 }

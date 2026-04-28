@@ -17,6 +17,7 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::resource('machines', MachineController::class);
+    Route::post('machines/current', [\App\Http\Controllers\CurrentMachineController::class, 'store'])->name('machines.current');
     Route::resource('paper-sizes', PaperSizeController::class);
     Route::resource('stickers', StickerController::class);
     Route::resource('templates', TemplateController::class);

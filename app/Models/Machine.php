@@ -44,4 +44,29 @@ class Machine extends Model
             }
         });
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function templates()
+    {
+        return $this->hasMany(Template::class);
+    }
+
+    public function stickers()
+    {
+        return $this->hasMany(Sticker::class);
+    }
+
+    public function paperSizes()
+    {
+        return $this->hasMany(PaperSize::class);
+    }
+
+    public function vouchers()
+    {
+        return $this->hasMany(Voucher::class);
+    }
 }

@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+use App\Models\Traits\BelongsToMachine;
+
 class Voucher extends Model
 {
+    use BelongsToMachine;
     protected $fillable = [
+        'machine_id',
         'code',
         'type',
         'status',
@@ -21,6 +25,11 @@ class Voucher extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function machine()
+    {
+        return $this->belongsTo(Machine::class);
     }
 
     /**
