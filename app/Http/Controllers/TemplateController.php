@@ -150,7 +150,7 @@ class TemplateController extends Controller
 
         $paperSizes = PaperSize::orderBy('name')->get();
 
-        return Inertia::render('templates/edit', [
+        return Inertia::render('templates/Edit', [
             'template' => $template->load('frames'),
             'existingCategories' => $existingCategories,
             'paperSizes' => $paperSizes,
