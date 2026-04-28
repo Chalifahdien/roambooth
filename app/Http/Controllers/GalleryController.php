@@ -16,6 +16,7 @@ class GalleryController extends Controller
     public function index(Request $request): Response
     {
         $query = FinalImage::with(['transaction.machine', 'transaction.template'])
+            ->whereHas('transaction')
             ->whereNotNull('image_path')
             ->where('image_path', '!=', 'EXPIRED')
             ->latest();

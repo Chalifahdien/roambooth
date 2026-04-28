@@ -14,7 +14,7 @@ class MachineScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        if (app()->runningInConsole() || request()->is('api/*')) {
+        if (app()->runningInConsole() || request()->is('api/*') || request()->is('downloads/*')) {
             return;
         }
 

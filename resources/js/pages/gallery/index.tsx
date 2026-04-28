@@ -158,7 +158,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                 >
                                     <img
                                         src={item.image_url}
-                                        alt={item.transaction.transaction_id}
+                                        alt={item.transaction?.transaction_id || 'Unknown'}
                                         className="max-h-full max-w-full object-contain transition-transform group-hover:scale-110 cursor-pointer"
                                         onClick={() => setSelectedImage(item)}
                                     />
@@ -169,7 +169,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                             variant="secondary"
                                             size="icon"
                                             className="h-8 w-8 shadow-md"
-                                            onClick={() => router.get(transactionsRoute.show({ transaction: item.transaction_id }).url)}
+                                            onClick={() => item.transaction_id && router.get(transactionsRoute.show({ transaction: item.transaction_id }).url)}
                                         >
                                             <Eye className="h-4 w-4" />
                                         </Button>
@@ -177,7 +177,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                             variant="secondary"
                                             size="icon"
                                             className="h-8 w-8 shadow-md"
-                                            onClick={() => downloadImage(item.image_url, `result-${item.transaction.transaction_id}.png`)}
+                                            onClick={() => downloadImage(item.image_url, `result-${item.transaction?.transaction_id || item.id}.png`)}
                                         >
                                             <Download className="h-4 w-4" />
                                         </Button>
@@ -186,7 +186,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                     {/* Info Badge on Hover */}
                                     <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                         <div className="bg-black/60 text-white text-[10px] px-2 py-1 rounded text-center flex flex-col">
-                                            <span className="truncate">{item.transaction.transaction_id}</span>
+                                            <span className="truncate">{item.transaction?.transaction_id || 'Unknown'}</span>
                                             <span className="opacity-80 border-t border-white/20 mt-1 pt-0.5">{formatDate(item.created_at)}</span>
                                         </div>
                                     </div>
@@ -225,7 +225,7 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                     <div className="space-y-1">
                                         <Label className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest px-1">Internal ID</Label>
                                         <div className="bg-card border rounded-lg p-3 font-mono text-sm shadow-sm select-all">
-                                            {selectedImage.transaction.transaction_id}
+                                            {selectedImage.transaction?.transaction_id || 'N/A'}
                                         </div>
                                     </div>
 
@@ -234,14 +234,14 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                             <Monitor className="h-4 w-4 mt-0.5 text-blue-500" />
                                             <div>
                                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Machine</p>
-                                                <p className="text-sm font-semibold">{selectedImage.transaction.machine.name}</p>
+                                                <p className="text-sm font-semibold">{selectedImage.transaction?.machine?.name || 'Unknown'}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-start gap-3 bg-card border rounded-lg p-3 shadow-sm">
                                             <ImageIcon className="h-4 w-4 mt-0.5 text-purple-500" />
                                             <div>
                                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Template</p>
-                                                <p className="text-sm font-semibold">{selectedImage.transaction.template.name}</p>
+                                                <p className="text-sm font-semibold">{selectedImage.transaction?.template?.name || 'Unknown'}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-start gap-3 bg-card border rounded-lg p-3 shadow-sm">
@@ -256,14 +256,15 @@ export default function GalleryIndex({ gallery, filters }: Props) {
                                     <div className="pt-4 flex flex-col gap-2">
                                         <Button
                                             className="w-full shadow-md"
-                                            onClick={() => downloadImage(selectedImage.image_url, `result-${selectedImage.transaction.transaction_id}.png`)}
+                                            onClick={() => downloadImage(selectedImage.image_url, `result-${selectedImage.transaction?.transaction_id || selectedImage.id}.png`)}
                                         >
                                             <Download className="mr-2 h-4 w-4" /> Download Result
                                         </Button>
                                         <Button
                                             variant="outline"
                                             className="w-full"
-                                            onClick={() => router.get(transactionsRoute.show({ transaction: selectedImage.transaction_id }).url)}
+                                            disabled={!selectedImage.transaction_id}
+                                            onClick={() => selectedImage.transaction_id && router.get(transactionsRoute.show({ transaction: selectedImage.transaction_id }).url)}
                                         >
                                             <ExternalLink className="mr-2 h-4 w-4" /> View Transaction Details
                                         </Button>
