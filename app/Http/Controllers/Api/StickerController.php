@@ -27,7 +27,12 @@ class StickerController extends Controller
             return response()->json(['message' => 'Invalid or inactive machine token'], 403);
         }
 
-        $stickers = Sticker::where('is_active', true)->get();
+        $stickers = Sticker::where('is_active', true)
+            ->where(function ($query) use ($machine) {
+                $query->where('machine_id', $machine->id)
+                      ->orWhereNull('machine_id');
+            })
+            ->get();
 
         return response()->json([
             'success' => true,

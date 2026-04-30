@@ -34,6 +34,10 @@ class TemplateController extends Controller
         $templates = Template::with(['frames', 'paperSize'])
             ->where('is_active', true)
             ->where('type', $request->type)
+            ->where(function ($query) use ($machine) {
+                $query->where('machine_id', $machine->id)
+                      ->orWhereNull('machine_id');
+            })
             ->get();
 
         return response()->json([
